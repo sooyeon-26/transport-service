@@ -1,0 +1,12 @@
+{
+  "name": "bus-crowding-ai",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "npm run dev --prefix frontend",
+    "server": "PORT=4100 npm run dev --prefix backend",
+    "install:all": "npm install --prefix backend && npm install --prefix frontend",
+    "download:data": "backend/venv/bin/python backend/model/download_seoul_bus_data.py",
+    "train": "backend/venv/bin/python backend/model/train_model.py"
+  }
+}
