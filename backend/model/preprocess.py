@@ -7,9 +7,9 @@ import pandas as pd
 # 예: "노선번호"가 "버스노선번호", "정류장명"이 "역명"처럼 다르면 여기만 바꾸면 됩니다.
 DATA_PATH = Path(__file__).resolve().parents[1] / "data" / "bus_passenger.csv"
 ROUTE_COL_CANDIDATES = ["노선번호", "RTE_NO"]
-STATION_COL_CANDIDATES = ["정류장명", "SBWY_STNS_NM"]
+STATION_COL_CANDIDATES = ["정류장명", "역명", "SBWY_STNS_NM"]
 DAY_TYPE_COL_CANDIDATES = ["요일구분", "DAY_TYPE", "dayType"]
-USE_YM_COL = "USE_YM"
+USE_YM_COL_CANDIDATES = ["USE_YM", "사용년월"]
 
 # 서울시 CardBusTimeNew는 월별 집계 데이터라 요일 컬럼이 없습니다.
 DEFAULT_DAY_TYPE = "all"
@@ -19,10 +19,12 @@ CONVERT_MONTH_TOTAL_TO_DAILY_AVERAGE = True
 # 현재 샘플: 06시승차, 07시승차 ... / 06시하차, 07시하차 ...
 BOARDING_PATTERNS = [
     re.compile(r"(\d{1,2})시승차"),
+    re.compile(r"(\d{1,2})시승차총승객수"),
     re.compile(r"HR_(\d{1,2})_GET_ON_(?:TNOPE|NOPE)"),
 ]
 ALIGHTING_PATTERNS = [
     re.compile(r"(\d{1,2})시하차"),
+    re.compile(r"(\d{1,2})시하차총승객수"),
     re.compile(r"HR_(\d{1,2})_GET_OFF_(?:TNOPE|NOPE)"),
 ]
 
@@ -88,9 +90,9 @@ def _month_days(value) -> int:
 def load_raw_data(csv_path: Path = DATA_PATH) -> pd.DataFrame:
     # 실제 공공데이터가 cp949로 제공되는 경우가 많아 utf-8 실패 시 cp949로 재시도합니다.
     try:
-        return pd.read_csv(csv_path)
+        return pd.read_csv(csv_path, low_memory=False)
     except UnicodeDecodeError:
-        return pd.read_csv(csv_path, encoding="cp949")
+        return pd.read_csv(csv_path, encoding="cp949", low_memory=False)
 
 
 def preprocess(csv_path: Path = DATA_PATH) -> pd.DataFrame:
@@ -98,6 +100,7 @@ def preprocess(csv_path: Path = DATA_PATH) -> pd.DataFrame:
     route_col = _first_existing(raw.columns, ROUTE_COL_CANDIDATES)
     station_col = _first_existing(raw.columns, STATION_COL_CANDIDATES)
     day_type_col = _first_existing(raw.columns, DAY_TYPE_COL_CANDIDATES, required=False)
+    use_ym_col = _first_existing(raw.columns, USE_YM_COL_CANDIDATES, required=False)
 
     if day_type_col is None:
         day_type_col = "__dayType"
@@ -110,8 +113,8 @@ def preprocess(csv_path: Path = DATA_PATH) -> pd.DataFrame:
         raise ValueError("시간대별 승차 컬럼을 찾지 못했습니다. preprocess.py의 BOARDING_PATTERN을 확인하세요.")
 
     id_vars = [route_col, station_col, day_type_col]
-    if USE_YM_COL in raw.columns:
-        id_vars.append(USE_YM_COL)
+    if use_ym_col:
+        id_vars.append(use_ym_col)
     board_col_names = [column for column, _hour in boarding_columns]
 
     # 서울시 데이터가 시간대별 승차 인원을 가로 컬럼으로 제공할 때 세로 형태로 바꿉니다.
@@ -126,8 +129,8 @@ def preprocess(csv_path: Path = DATA_PATH) -> pd.DataFrame:
     melted["station"] = melted[station_col].astype(str)
     melted["dayType"] = melted[day_type_col].astype(str)
     melted["passengers"] = pd.to_numeric(melted["passengers"], errors="coerce").fillna(0)
-    if USE_YM_COL in melted.columns and CONVERT_MONTH_TOTAL_TO_DAILY_AVERAGE:
-        melted["passengers"] = melted["passengers"] / melted[USE_YM_COL].apply(_month_days)
+    if use_ym_col and CONVERT_MONTH_TOTAL_TO_DAILY_AVERAGE:
+        melted["passengers"] = melted["passengers"] / melted[use_ym_col].apply(_month_days)
 
     long_df = melted[["route", "station", "dayType", "hour", "passengers"]].copy()
 
@@ -144,8 +147,8 @@ def preprocess(csv_path: Path = DATA_PATH) -> pd.DataFrame:
         alighted["station"] = alighted[station_col].astype(str)
         alighted["dayType"] = alighted[day_type_col].astype(str)
         alighted["alightPassengers"] = pd.to_numeric(alighted["alightPassengers"], errors="coerce").fillna(0)
-        if USE_YM_COL in alighted.columns and CONVERT_MONTH_TOTAL_TO_DAILY_AVERAGE:
-            alighted["alightPassengers"] = alighted["alightPassengers"] / alighted[USE_YM_COL].apply(_month_days)
+        if use_ym_col and CONVERT_MONTH_TOTAL_TO_DAILY_AVERAGE:
+            alighted["alightPassengers"] = alighted["alightPassengers"] / alighted[use_ym_col].apply(_month_days)
         long_df = long_df.merge(
             alighted[["route", "station", "dayType", "hour", "alightPassengers"]],
             on=["route", "station", "dayType", "hour"],

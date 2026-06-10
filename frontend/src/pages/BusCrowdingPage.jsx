@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import styled from 'styled-components';
 import { Database, MapPinned } from 'lucide-react';
-import { fetchHourly, fetchOptions, fetchPrediction } from '../api/busApi.js';
+import { fetchHourly, fetchOptions, fetchPrediction, fetchStations } from '../api/busApi.js';
 import BusSearchBox from '../components/BusSearchBox.jsx';
 import CrowdingChart from '../components/CrowdingChart.jsx';
 import CrowdingResult from '../components/CrowdingResult.jsx';
@@ -86,7 +86,7 @@ const ErrorBox = styled.div`
 
 const defaultForm = {
   route: '143',
-  station: '강남역',
+  station: '',
   dayType: 'all',
   hour: '8'
 };
@@ -99,7 +99,7 @@ const dayTypeLabel = {
 
 function BusCrowdingPage() {
   const [form, setForm] = useState(defaultForm);
-  const [options, setOptions] = useState({ routes: [], stations: [], routeStations: {}, hours: [] });
+  const [options, setOptions] = useState({ routes: [], stations: [], dayTypes: [], hours: [] });
   const [result, setResult] = useState(null);
   const [hourly, setHourly] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -110,17 +110,24 @@ function BusCrowdingPage() {
     [hourly]
   );
 
-  const runSearch = async (event) => {
+  const runSearch = async (event, overrideForm) => {
     event?.preventDefault();
+    const searchForm = overrideForm || form;
+    if (!searchForm.route || !searchForm.station) {
+      setResult(null);
+      setHourly([]);
+      return;
+    }
+
     setLoading(true);
     setError('');
 
     try {
       const params = {
-        route: form.route.trim(),
-        station: form.station.trim(),
-        hour: form.hour,
-        dayType: form.dayType
+        route: searchForm.route.trim(),
+        station: searchForm.station.trim(),
+        hour: searchForm.hour,
+        dayType: searchForm.dayType
       };
       const [predictionData, hourlyData] = await Promise.all([
         fetchPrediction(params),
@@ -136,35 +143,67 @@ function BusCrowdingPage() {
   };
 
   useEffect(() => {
-    fetchOptions()
-      .then((data) => {
-        setOptions(data);
-        const firstRoute = data.routes?.[0] || defaultForm.route;
-        const firstStation = data.routeStations?.[firstRoute]?.[0] || data.stations?.[0] || defaultForm.station;
-        setForm((current) => ({
-          ...current,
-          ...(() => {
-            const nextRoute = data.routes?.includes(current.route) ? current.route : firstRoute;
-            const nextStations = data.routeStations?.[nextRoute] || [];
-            const nextDayType = data.dayTypes?.includes(current.dayType)
-              ? current.dayType
-              : data.dayTypes?.[0] || defaultForm.dayType;
-            return {
-              route: nextRoute,
-              station: nextStations.includes(current.station) ? current.station : firstStation,
-              dayType: nextDayType
-            };
-          })()
-        }));
-      })
-      .catch(() => setOptions({ routes: [], stations: [], routeStations: {}, hours: [] }));
+    let ignore = false;
+
+    async function initialize() {
+      try {
+        const data = await fetchOptions();
+        if (ignore) return;
+
+        const firstRoute = data.routes?.includes(defaultForm.route) ? defaultForm.route : data.routes?.[0] || '';
+        const stationData = firstRoute ? await fetchStations(firstRoute) : { stations: [] };
+        if (ignore) return;
+
+        const firstStation = stationData.stations?.[0] || '';
+        const nextForm = {
+          route: firstRoute,
+          station: firstStation,
+          dayType: data.dayTypes?.includes(defaultForm.dayType) ? defaultForm.dayType : data.dayTypes?.[0] || 'all',
+          hour: data.hours?.includes(Number(defaultForm.hour)) ? defaultForm.hour : String(data.hours?.[0] || 8)
+        };
+
+        setOptions({ ...data, stations: stationData.stations || [] });
+        setForm(nextForm);
+        runSearch(null, nextForm);
+      } catch (requestError) {
+        if (!ignore) {
+          setOptions({ routes: [], stations: [], dayTypes: [], hours: [] });
+          setError(requestError.response?.data?.error || requestError.message || '초기 데이터를 불러오지 못했습니다.');
+        }
+      }
+    }
+
+    initialize();
+    return () => {
+      ignore = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    runSearch();
-    // 첫 로딩에서 샘플 조건을 자동 조회합니다.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (!form.route) return;
+    let ignore = false;
+
+    async function loadStationsForRoute() {
+      try {
+        const stationData = await fetchStations(form.route);
+        if (ignore) return;
+        const stations = stationData.stations || [];
+        setOptions((current) => ({ ...current, stations }));
+        setForm((current) => {
+          if (current.route !== form.route || stations.includes(current.station)) return current;
+          return { ...current, station: stations[0] || '' };
+        });
+      } catch (requestError) {
+        if (!ignore) setError(requestError.response?.data?.error || requestError.message || '정류장 목록을 불러오지 못했습니다.');
+      }
+    }
+
+    loadStationsForRoute();
+    return () => {
+      ignore = true;
+    };
+  }, [form.route]);
 
   return (
     <Shell>

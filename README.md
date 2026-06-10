@@ -35,7 +35,7 @@ cd bus-crowding-ai
 npm run dev
 ```
 
-- Backend: `http://localhost:4100`
+- Backend: `http://localhost:4000`
 - Frontend: `http://localhost:5173`
 
 ## API

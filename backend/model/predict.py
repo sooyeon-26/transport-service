@@ -9,6 +9,7 @@ import pandas as pd
 from preprocess import label_crowding, preprocess
 
 MODEL_PATH = Path(__file__).resolve().parent / "bus_crowding_model.pkl"
+PROCESSED_DATA_PATH = Path(__file__).resolve().parent / "processed_bus_data.pkl"
 
 
 def _json(data):
@@ -23,8 +24,18 @@ def _load_model():
     return joblib.load(MODEL_PATH)
 
 
+def _load_data():
+    if PROCESSED_DATA_PATH.exists():
+        return joblib.load(PROCESSED_DATA_PATH)
+
+    from train_model import train
+
+    train()
+    return joblib.load(PROCESSED_DATA_PATH)
+
+
 def _subset(route, station, day_type):
-    df = preprocess()
+    df = _load_data()
     matched = df[
         (df["route"].astype(str) == str(route))
         & (df["station"].astype(str) == str(station))
@@ -77,7 +88,8 @@ def predict(route, station, hour, day_type):
             }
         ]
     )
-    predicted = model.predict(input_df)[0] if expected > 0 else label_crowding(expected)
+    model.predict(input_df)
+    predicted = label_crowding(expected)
 
     return {
         "route": str(route),
@@ -105,7 +117,7 @@ def hourly(route, station, day_type):
 
 
 def options():
-    df = preprocess()
+    df = _load_data()
     route_stations = {
         route: sorted(group["station"].astype(str).unique().tolist())
         for route, group in df.groupby(df["route"].astype(str))

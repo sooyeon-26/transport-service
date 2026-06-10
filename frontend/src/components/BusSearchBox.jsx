@@ -83,14 +83,13 @@ const Button = styled.button`
 `;
 
 function BusSearchBox({ form, setForm, onSubmit, loading, options }) {
-  const stationOptions = options.routeStations?.[form.route] || options.stations || [];
+  const stationOptions = options.stations || [];
 
   const update = (event) => {
     const { name, value } = event.target;
     setForm((current) => {
       if (name === 'route') {
-        const nextStations = options.routeStations?.[value] || options.stations || [];
-        return { ...current, route: value, station: nextStations[0] || '' };
+        return { ...current, route: value, station: '' };
       }
       return { ...current, [name]: value };
     });
