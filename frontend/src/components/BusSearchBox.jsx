@@ -1,25 +1,23 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import styled from 'styled-components';
-import { Search } from 'lucide-react';
-
-const dayTypeLabel = {
-  all: '월 전체',
-  weekday: '평일',
-  weekend: '주말'
-};
+import { ChevronDown, Search } from 'lucide-react';
 
 const Panel = styled.form`
+  position: relative;
+  z-index: 50;
   display: grid;
-  grid-template-columns: 1fr 1.3fr 0.8fr 0.8fr auto;
+  grid-template-columns: ${({ $showHour }) => ($showHour ? '1fr 1.45fr 0.75fr auto' : '1fr 1.5fr auto')};
   gap: 12px;
   align-items: end;
-  padding: 18px;
-  border: 1px solid #d8e2ea;
+  height: 100%;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.7);
   border-radius: 8px;
-  background: #ffffff;
-  box-shadow: 0 8px 24px rgba(26, 48, 64, 0.07);
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow: 0 18px 48px rgba(45, 54, 82, 0.12);
+  backdrop-filter: blur(20px);
 
-  @media (max-width: 980px) {
+  @media (max-width: 760px) {
     grid-template-columns: 1fr 1fr;
   }
 
@@ -31,7 +29,7 @@ const Panel = styled.form`
 const Field = styled.label`
   display: grid;
   gap: 7px;
-  color: #415466;
+  color: #464b65;
   font-size: 13px;
   font-weight: 700;
 `;
@@ -39,28 +37,94 @@ const Field = styled.label`
 const inputStyles = `
   width: 100%;
   min-height: 44px;
-  border: 1px solid #cbd8e3;
+  border: 1px solid #dae0f1;
   border-radius: 6px;
-  background: #f9fbfd;
-  color: #15212c;
+  background: rgba(250, 251, 255, 0.78);
+  color: #27253d;
   font-size: 15px;
   padding: 0 12px;
   outline: none;
 
   &:focus {
-    border-color: #2177c7;
-    box-shadow: 0 0 0 3px rgba(33, 119, 199, 0.14);
+    border-color: #7fbfff;
+    box-shadow: 0 0 0 3px rgba(127, 191, 255, 0.2);
     background: #ffffff;
   }
 `;
 
 const Select = styled.select`${inputStyles}`;
 
+const Input = styled.input`${inputStyles}`;
+
+const ComboWrap = styled.div`
+  position: relative;
+  z-index: ${({ $open }) => ($open ? 100 : 1)};
+`;
+
+const ComboInput = styled(Input)`
+  padding-right: 38px;
+`;
+
+const ComboToggle = styled.button`
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  display: inline-grid;
+  place-items: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #69718d;
+  cursor: pointer;
+  transform: translateY(-50%);
+`;
+
+const OptionList = styled.div`
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 120;
+  max-height: 230px;
+  overflow-y: auto;
+  border: 1px solid #dae0f1;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 18px 44px rgba(45, 54, 82, 0.18);
+  padding: 6px;
+`;
+
+const OptionButton = styled.button`
+  width: 100%;
+  min-height: 36px;
+  border: 0;
+  border-radius: 6px;
+  background: ${({ $active }) => ($active ? '#edf8ff' : 'transparent')};
+  color: #27253d;
+  padding: 8px 10px;
+  text-align: left;
+  font-weight: 800;
+  cursor: pointer;
+
+  &:hover {
+    background: #f3f8ff;
+  }
+`;
+
+const EmptyOption = styled.div`
+  padding: 10px;
+  color: #69718d;
+  font-size: 13px;
+  font-weight: 800;
+`;
+
 const Button = styled.button`
   min-height: 44px;
   border: 0;
   border-radius: 6px;
-  background: #1167b1;
+  background: #2f8df4;
   color: white;
   font-weight: 800;
   font-size: 15px;
@@ -77,12 +141,80 @@ const Button = styled.button`
     opacity: 0.7;
   }
 
-  @media (max-width: 980px) {
+  @media (max-width: 760px) {
     width: 100%;
+    grid-column: 1 / -1;
   }
 `;
 
-function BusSearchBox({ form, setForm, onSubmit, loading, options }) {
+function SearchableField({ label, name, value, options, placeholder, inputMode, onChange }) {
+  const [open, setOpen] = useState(false);
+  const normalizedValue = String(value || '');
+  const normalizedOptions = useMemo(
+    () => Array.from(new Set((options || []).filter(Boolean).map(String))),
+    [options]
+  );
+  const filteredOptions = useMemo(() => {
+    const query = normalizedValue.trim().toLowerCase();
+    if (!query) return normalizedOptions.slice(0, 80);
+    return normalizedOptions.filter((option) => option.toLowerCase().includes(query)).slice(0, 80);
+  }, [normalizedOptions, normalizedValue]);
+
+  const selectValue = (nextValue) => {
+    onChange({ target: { name, value: nextValue } });
+    setOpen(false);
+  };
+
+  return (
+    <Field>
+      {label}
+      <ComboWrap $open={open}>
+        <ComboInput
+          name={name}
+          value={normalizedValue}
+          onChange={(event) => {
+            onChange(event);
+            setOpen(true);
+          }}
+          onFocus={() => setOpen(true)}
+          onBlur={() => window.setTimeout(() => setOpen(false), 120)}
+          inputMode={inputMode}
+          placeholder={placeholder}
+          autoComplete="off"
+        />
+        <ComboToggle
+          type="button"
+          aria-label={`${label} 선택지 열기`}
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={() => setOpen((current) => !current)}
+        >
+          <ChevronDown size={17} aria-hidden="true" />
+        </ComboToggle>
+        {open && (
+          <OptionList>
+            {filteredOptions.length ? (
+              filteredOptions.map((option) => (
+                <OptionButton
+                  key={option}
+                  type="button"
+                  $active={option === normalizedValue}
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => selectValue(option)}
+                >
+                  {option}
+                </OptionButton>
+              ))
+            ) : (
+              <EmptyOption>검색 결과가 없습니다.</EmptyOption>
+            )}
+          </OptionList>
+        )}
+      </ComboWrap>
+    </Field>
+  );
+}
+
+function BusSearchBox({ form, setForm, onSubmit, loading, options, showHour = false, submitLabel = '예측하기' }) {
   const stationOptions = options.stations || [];
 
   const update = (event) => {
@@ -96,50 +228,39 @@ function BusSearchBox({ form, setForm, onSubmit, loading, options }) {
   };
 
   return (
-    <Panel onSubmit={onSubmit}>
-      <Field>
-        버스 번호
-        <Select name="route" value={form.route} onChange={update}>
-          {(options.routes?.length ? options.routes : [form.route]).map((route) => (
-            <option key={route} value={route}>
-              {route}
-            </option>
-          ))}
-        </Select>
-      </Field>
-      <Field>
-        정류장명
-        <Select name="station" value={form.station} onChange={update}>
-          {(stationOptions.length ? stationOptions : [form.station]).map((station) => (
-            <option key={station} value={station}>
-              {station}
-            </option>
-          ))}
-        </Select>
-      </Field>
-      <Field>
-        요일 구분
-        <Select name="dayType" value={form.dayType} onChange={update}>
-          {(options.dayTypes?.length ? options.dayTypes : ['weekday', 'weekend']).map((dayType) => (
-            <option key={dayType} value={dayType}>
-              {dayTypeLabel[dayType] || dayType}
-            </option>
-          ))}
-        </Select>
-      </Field>
-      <Field>
-        시간대
-        <Select name="hour" value={form.hour} onChange={update}>
-          {(options.hours?.length ? options.hours : [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]).map((hour) => (
-            <option key={hour} value={hour}>
-              {hour}시
-            </option>
-          ))}
-        </Select>
-      </Field>
+    <Panel onSubmit={onSubmit} $showHour={showHour}>
+      <SearchableField
+        label="버스 번호"
+        name="route"
+        value={form.route}
+        options={options.routes?.length ? options.routes : [form.route]}
+        inputMode="numeric"
+        placeholder="노선 검색"
+        onChange={update}
+      />
+      <SearchableField
+        label="정류장명"
+        name="station"
+        value={form.station}
+        options={stationOptions.length ? stationOptions : [form.station]}
+        placeholder="정류장 검색"
+        onChange={update}
+      />
+      {showHour && (
+        <Field>
+          시간대
+          <Select name="hour" value={form.hour} onChange={update}>
+            {(options.hours?.length ? options.hours : Array.from({ length: 24 }, (_, hour) => hour)).map((hour) => (
+              <option key={hour} value={hour}>
+                {hour}시
+              </option>
+            ))}
+          </Select>
+        </Field>
+      )}
       <Button type="submit" disabled={loading}>
         <Search size={18} aria-hidden="true" />
-        예측하기
+        {submitLabel}
       </Button>
     </Panel>
   );

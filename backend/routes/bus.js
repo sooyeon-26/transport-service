@@ -9,6 +9,7 @@ const __dirname = path.dirname(__filename);
 const MODEL_DIR = path.resolve(__dirname, '../model');
 const API_CACHE_PATH = path.join(MODEL_DIR, 'bus_api_cache.json');
 let cache = null;
+const FALLBACK_DAY_TYPES = ['all', 'weekday', 'weekend'];
 
 function labelCrowding(passengers) {
   if (passengers <= 20) return '여유';
@@ -64,7 +65,11 @@ function getCache() {
 
 function findRows(route, station, dayType) {
   const data = getCache();
-  return data.byRouteStationDay.get(`${route}|||${station}|||${dayType}`) || [];
+  return (
+    data.byRouteStationDay.get(`${route}|||${station}|||${dayType}`) ||
+    data.byRouteStationDay.get(`${route}|||${station}|||all`) ||
+    []
+  );
 }
 
 router.get('/predict', async (req, res) => {
@@ -78,7 +83,8 @@ router.get('/predict', async (req, res) => {
   try {
     const data = getCache();
     const key = `${String(route)}|||${String(station)}|||${String(dayType)}|||${Number(hour)}`;
-    const row = data.byKey.get(key);
+    const fallbackKey = `${String(route)}|||${String(station)}|||all|||${Number(hour)}`;
+    const row = data.byKey.get(key) || data.byKey.get(fallbackKey);
     const expectedPassengers = row?.passengers || 0;
     const predictedCrowding = labelCrowding(expectedPassengers);
     res.json({
@@ -116,7 +122,8 @@ router.get('/hourly', async (req, res) => {
 router.get('/options', async (_req, res) => {
   try {
     const data = getCache();
-    res.json({ routes: data.routes, dayTypes: data.dayTypes, hours: data.hours });
+    const dayTypes = Array.from(new Set([...(data.dayTypes || []), ...FALLBACK_DAY_TYPES]));
+    res.json({ routes: data.routes, dayTypes, hours: data.hours });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
