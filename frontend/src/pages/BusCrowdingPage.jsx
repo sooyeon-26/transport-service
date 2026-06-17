@@ -33,8 +33,8 @@ const Content = styled.div`
 const IntroLayer = styled.div`
   min-height: 100vh;
   display: grid;
-  place-items: center;
-  padding: 32px 24px;
+  place-items: start center;
+  padding: clamp(36px, 7vh, 60px) 24px 32px;
 
   @media (max-width: 720px) {
     padding: 18px 12px;
@@ -45,14 +45,14 @@ const IntroCard = styled.section`
   width: min(1040px, 100%);
   display: grid;
   grid-template-columns: minmax(0, 1fr) 310px;
-  gap: 22px;
-  border: 1px solid rgba(255, 255, 255, 0.78);
+  gap: 18px 22px;
+  border: 1px solid rgba(255, 255, 255, 0.94);
   border-radius: 8px;
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.86), rgba(247, 251, 255, 0.68)),
-    rgba(255, 255, 255, 0.72);
-  padding: 24px;
-  box-shadow: 0 34px 110px rgba(45, 54, 82, 0.2);
+    linear-gradient(145deg, rgba(255, 255, 255, 0.985), rgba(248, 251, 255, 0.94)),
+    rgba(255, 255, 255, 0.96);
+  padding: 26px;
+  box-shadow: 0 54px 150px rgba(45, 54, 82, 0.35);
   backdrop-filter: blur(28px);
 
   @media (max-width: 900px) {
@@ -62,6 +62,7 @@ const IntroCard = styled.section`
 
 const IntroMain = styled.div`
   min-width: 0;
+  align-self: center;
 `;
 
 const IntroEyebrow = styled.div`
@@ -70,7 +71,7 @@ const IntroEyebrow = styled.div`
   gap: 7px;
   border: 1px solid rgba(218, 224, 241, 0.9);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.78);
+  background: rgba(255, 255, 255, 0.88);
   color: #464b65;
   padding: 8px 11px;
   font-size: 12px;
@@ -89,24 +90,30 @@ const IntroTitle = styled.h1`
 const IntroCopy = styled.p`
   max-width: 560px;
   margin: 0;
-  color: #59627f;
+  color: #414c68;
   line-height: 1.6;
 `;
 
 const IntroFormWrap = styled.div`
   grid-column: 1 / -1;
-  margin-top: 2px;
+  margin-top: 0;
+  border: 1px solid rgba(218, 224, 241, 0.86);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.8);
+  padding: 14px;
+  box-shadow: 0 16px 38px rgba(45, 54, 82, 0.1);
 `;
 
 const IntroPreview = styled.aside`
-  min-height: 220px;
+  min-height: 190px;
   position: relative;
   overflow: hidden;
-  border: 1px solid rgba(218, 224, 241, 0.9);
+  border: 1px solid rgba(218, 224, 241, 0.64);
   border-radius: 8px;
   background:
-    radial-gradient(circle at 72% 18%, rgba(143, 216, 255, 0.34), transparent 32%),
-    linear-gradient(145deg, rgba(255, 255, 255, 0.78), rgba(237, 248, 255, 0.86));
+    radial-gradient(circle at 72% 18%, rgba(143, 216, 255, 0.24), transparent 32%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.6), rgba(237, 248, 255, 0.68));
+  opacity: 0.82;
   padding: 16px;
   display: grid;
   align-content: space-between;
@@ -119,7 +126,7 @@ const IntroPreview = styled.aside`
 const PreviewMap = styled.div`
   position: absolute;
   inset: 0;
-  opacity: 0.76;
+  opacity: 0.56;
 
   svg {
     width: 100%;
@@ -155,33 +162,33 @@ const PreviewTitle = styled.strong`
   line-height: 1.1;
 `;
 
-const PreviewFooter = styled.div`
+const PreviewResult = styled.div`
   position: relative;
   z-index: 1;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-`;
-
-const PreviewStat = styled.div`
-  border: 1px solid rgba(218, 224, 241, 0.9);
+  border: 1px solid rgba(143, 216, 255, 0.44);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.74);
-  padding: 11px;
+  background: rgba(255, 255, 255, 0.6);
+  padding: 12px;
 `;
 
-const PreviewStatLabel = styled.span`
-  display: block;
-  color: #69718d;
-  font-size: 11px;
-  font-weight: 900;
+const PreviewResultMeta = styled.div`
+  color: #2878d8;
+  font-size: 12px;
+  font-weight: 950;
 `;
 
-const PreviewStatValue = styled.strong`
-  display: block;
-  margin-top: 5px;
+const PreviewResultText = styled.div`
+  margin-top: 6px;
   color: #27253d;
-  font-size: 18px;
+  font-size: 19px;
+  font-weight: 950;
+`;
+
+const PreviewResultSub = styled.div`
+  margin-top: 4px;
+  color: #59627f;
+  font-size: 13px;
+  font-weight: 800;
 `;
 
 const DashboardFrame = styled.div`
@@ -190,7 +197,7 @@ const DashboardFrame = styled.div`
   min-height: calc(100vh - 48px);
   border: 1px solid rgba(255, 255, 255, 0.6);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.48);
   padding: 12px;
   box-shadow: 0 34px 100px rgba(45, 54, 82, 0.22);
   backdrop-filter: blur(26px);
@@ -205,8 +212,15 @@ const ControlDeck = styled.section`
   position: relative;
   z-index: 30;
   display: grid;
-  grid-template-columns: minmax(260px, 0.7fr) minmax(0, 1.3fr);
-  gap: 12px;
+  grid-template-columns: minmax(260px, 0.45fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: end;
+  border: 1px solid rgba(255, 255, 255, 0.76);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.86);
+  padding: 16px;
+  box-shadow: 0 18px 48px rgba(45, 54, 82, 0.12);
+  backdrop-filter: blur(22px);
 
   @media (max-width: 980px) {
     grid-template-columns: 1fr;
@@ -214,8 +228,8 @@ const ControlDeck = styled.section`
 `;
 
 const LocationPlate = styled.article`
-  min-height: 112px;
-  border: 1px solid rgba(255, 255, 255, 0.7);
+  min-height: 94px;
+  border: 1px solid rgba(218, 224, 241, 0.76);
   border-radius: 8px;
   overflow: hidden;
   position: relative;
@@ -226,8 +240,8 @@ const LocationPlate = styled.article`
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.68), rgba(239, 247, 255, 0.56)),
     linear-gradient(150deg, #f8fbff 0%, #eef7ff 46%, #f8f4ff 100%);
-  box-shadow: 0 18px 48px rgba(45, 54, 82, 0.16);
-  backdrop-filter: blur(16px);
+  box-shadow: none;
+  backdrop-filter: none;
 
   &::after {
     content: '';
@@ -282,7 +296,7 @@ const StationMeta = styled.div`
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 `;
 
 const MetaChip = styled.span`
@@ -301,7 +315,7 @@ const MetaChip = styled.span`
 
 const StationTitle = styled.h2`
   margin: 0;
-  font-size: clamp(24px, 3vw, 38px);
+  font-size: clamp(22px, 2.5vw, 32px);
   line-height: 1.12;
   letter-spacing: 0;
 `;
@@ -322,10 +336,10 @@ const ErrorBox = styled.div`
   font-weight: 700;
 `;
 
-const TimelinePanel = styled.section`
+const TimeExplorePanel = styled.section`
   border: 1px solid rgba(255, 255, 255, 0.7);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.88);
   padding: 18px;
   box-shadow: 0 18px 48px rgba(45, 54, 82, 0.12);
   backdrop-filter: blur(20px);
@@ -408,7 +422,7 @@ const Slider = styled.input.attrs({ type: 'range' })`
 const RhythmPanel = styled.section`
   border: 1px solid rgba(255, 255, 255, 0.7);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.84);
+  background: rgba(255, 255, 255, 0.88);
   padding: 18px;
   box-shadow: 0 18px 48px rgba(45, 54, 82, 0.12);
   backdrop-filter: blur(20px);
@@ -436,49 +450,25 @@ const RhythmScroll = styled.div`
   overflow-x: auto;
 `;
 
-const RhythmGroups = styled.div`
-  min-width: 980px;
+const TimeStrip = styled.div`
+  min-width: 760px;
   display: grid;
-  grid-template-columns: repeat(5, minmax(150px, 1fr));
-  gap: 10px;
-`;
-
-const RhythmGroup = styled.div`
-  border: 1px solid rgba(218, 224, 241, 0.8);
-  border-radius: 8px;
-  background: rgba(250, 251, 255, 0.72);
-  padding: 12px;
-`;
-
-const PeriodTitle = styled.div`
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  color: #464b65;
-  font-size: 12px;
-  font-weight: 950;
-  margin-bottom: 10px;
-`;
-
-const HourRail = styled.div`
-  display: grid;
-  grid-template-columns: repeat(var(--hour-count), minmax(28px, 1fr));
-  gap: 6px;
+  grid-template-columns: repeat(24, minmax(24px, 1fr));
+  gap: 5px;
   align-items: end;
-  min-height: 122px;
 `;
 
-const HourButton = styled.button`
+const TimeStripButton = styled.button`
   display: grid;
-  grid-template-rows: 1fr auto auto;
-  gap: 6px;
+  grid-template-rows: 52px auto;
+  gap: 7px;
   min-width: 0;
-  min-height: 118px;
+  min-height: 82px;
   border: 1px solid ${({ $active }) => ($active ? '#2f8df4' : 'transparent')};
   border-radius: 8px;
   background: ${({ $active }) => ($active ? '#ffffff' : 'transparent')};
   color: #27253d;
-  padding: 6px 4px;
+  padding: 6px 3px;
   cursor: ${({ $clickable }) => ($clickable ? 'pointer' : 'default')};
   box-shadow: ${({ $active }) => ($active ? '0 12px 26px rgba(47, 141, 244, 0.18)' : 'none')};
   opacity: ${({ disabled }) => (disabled ? 0.48 : 1)};
@@ -487,7 +477,7 @@ const HourButton = styled.button`
 const DensityTrack = styled.span`
   display: grid;
   align-items: end;
-  height: 58px;
+  height: 52px;
   border-radius: 999px;
   background: rgba(234, 239, 250, 0.9);
   overflow: hidden;
@@ -514,36 +504,17 @@ const HourLabel = styled.span`
   text-align: center;
 `;
 
-const PassengerLabel = styled.span`
-  color: #27253d;
-  font-size: 11px;
-  font-weight: 950;
-  text-align: center;
-`;
-
 const ExploreGrid = styled.section`
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(420px, 0.75fr);
   gap: 12px;
-  align-items: stretch;
-
-  @media (max-width: 980px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-const RightStack = styled.div`
-  display: grid;
-  gap: 12px;
-  align-content: start;
 `;
 
 const defaultForm = {
   route: '143',
   station: '',
-  hour: '8'
+  hour: String(new Date().getHours())
 };
 
 const stationGeoMap = {
@@ -587,19 +558,15 @@ const timeToneMap = {
   }
 };
 
-const rhythmGroups = [
-  { label: '새벽', range: '0-5시', hours: [0, 1, 2, 3, 4, 5] },
-  { label: '아침', range: '6-10시', hours: [6, 7, 8, 9, 10] },
-  { label: '낮', range: '11-15시', hours: [11, 12, 13, 14, 15] },
-  { label: '저녁', range: '16-20시', hours: [16, 17, 18, 19, 20] },
-  { label: '밤', range: '21-23시', hours: [21, 22, 23] }
-];
-
 function labelCrowding(passengers) {
   if (passengers <= 20) return '여유';
   if (passengers <= 50) return '보통';
   if (passengers <= 80) return '혼잡';
   return '매우 혼잡';
+}
+
+function getStationLabel(station) {
+  return String(station || '').replace(/\(\d+\)/, '').trim();
 }
 
 function getTimePeriod(hour) {
@@ -713,6 +680,21 @@ function BusCrowdingPage() {
     () => Math.max(1, ...hourly.map((item) => item.passengers || 0)),
     [hourly]
   );
+  const introStationLabel = useMemo(
+    () => getStationLabel(form.station) || '정류장을 선택해주세요',
+    [form.station]
+  );
+  const introPreviewStatus = result
+    ? {
+        meta: `${result.hour}:00 기준 · ${result.predictedCrowding}`,
+        text: `예상 ${result.expectedPassengers}명`,
+        sub: result.recommendation
+      }
+    : {
+        meta: `${form.hour || new Date().getHours()}:00 기준`,
+        text: form.station ? '현재 시간 기준으로 확인' : '정류장 선택 대기',
+        sub: form.station ? '혼잡도 확인하기를 눌러 예측해보세요.' : '노선과 정류장을 먼저 골라주세요.'
+      };
 
   const runSearch = async (event, overrideForm) => {
     event?.preventDefault();
@@ -763,7 +745,7 @@ function BusCrowdingPage() {
         const nextForm = {
           route: firstRoute,
           station: firstStation,
-          hour: data.hours?.includes(Number(defaultForm.hour)) ? defaultForm.hour : String(data.hours?.[0] || 8)
+          hour: data.hours?.includes(new Date().getHours()) ? String(new Date().getHours()) : String(data.hours?.[0] || 8)
         };
 
         setOptions({ ...data, stations: stationData.stations || [] });
@@ -822,10 +804,10 @@ function BusCrowdingPage() {
             <IntroMain>
               <IntroEyebrow>
                 <MapPinned size={14} aria-hidden="true" />
-                버스 혼잡도 예측
+                서울시 공공데이터 기반
               </IntroEyebrow>
-              <IntroTitle>어디서, 몇 시에 타시나요?</IntroTitle>
-              <IntroCopy>노선과 정류장, 시간을 고르면 지금 타도 괜찮은지 바로 확인할 수 있어요.</IntroCopy>
+              <IntroTitle>지금 타도 괜찮을까요?</IntroTitle>
+              <IntroCopy>노선과 정류장을 고르면 현재 시간 기준 혼잡도를 바로 확인할 수 있어요.</IntroCopy>
             </IntroMain>
             <IntroPreview aria-hidden="true">
               <PreviewMap>
@@ -850,20 +832,15 @@ function BusCrowdingPage() {
               <PreviewContent>
                 <PreviewChip>
                   <Route size={14} aria-hidden="true" />
-                  143번
+                  {form.route ? `${form.route}번` : '노선 선택'}
                 </PreviewChip>
-                <PreviewTitle>개포도서관</PreviewTitle>
+                <PreviewTitle>{introStationLabel}</PreviewTitle>
+                <PreviewResult>
+                  <PreviewResultMeta>{introPreviewStatus.meta}</PreviewResultMeta>
+                  <PreviewResultText>{introPreviewStatus.text}</PreviewResultText>
+                  <PreviewResultSub>{introPreviewStatus.sub}</PreviewResultSub>
+                </PreviewResult>
               </PreviewContent>
-              <PreviewFooter>
-                <PreviewStat>
-                  <PreviewStatLabel>선택 시간</PreviewStatLabel>
-                  <PreviewStatValue>8:00</PreviewStatValue>
-                </PreviewStat>
-                <PreviewStat>
-                  <PreviewStatLabel>상태</PreviewStatLabel>
-                  <PreviewStatValue>여유</PreviewStatValue>
-                </PreviewStat>
-              </PreviewFooter>
             </IntroPreview>
             {error && <ErrorBox>{error}</ErrorBox>}
             <IntroFormWrap>
@@ -873,8 +850,8 @@ function BusCrowdingPage() {
                 onSubmit={startExperience}
                 loading={loading}
                 options={options}
-                showHour
-                submitLabel="시작하기"
+                submitLabel="혼잡도 확인하기"
+                variant="flat"
               />
             </IntroFormWrap>
           </IntroCard>
@@ -928,7 +905,7 @@ function BusCrowdingPage() {
               </LocationContent>
             </LocationPlate>
             <SearchPlate>
-              <BusSearchBox form={form} setForm={setForm} onSubmit={runSearch} loading={loading} options={options} />
+              <BusSearchBox form={form} setForm={setForm} onSubmit={runSearch} loading={loading} options={options} variant="flat" />
             </SearchPlate>
           </ControlDeck>
 
@@ -943,76 +920,66 @@ function BusCrowdingPage() {
               onSelectHour={(hour) => setForm((current) => ({ ...current, hour: String(hour) }))}
             />
 
-            <RightStack>
-              <TimelinePanel>
-                <TimelineHeader>
-                  <SectionTitle>탑승 시간</SectionTitle>
-                  <SelectedTime>{form.hour}:00</SelectedTime>
-                </TimelineHeader>
-                <Slider
-                  min="0"
-                  max="23"
-                  step="1"
-                  value={form.hour}
-                  aria-label="탑승 시간 선택"
-                  onChange={(event) => setForm((current) => ({ ...current, hour: event.target.value }))}
-                />
-              </TimelinePanel>
-
+            <TimeExplorePanel>
+              <TimelineHeader>
+                <div>
+                  <SectionTitle>시간대별 혼잡도 추이</SectionTitle>
+                  <RhythmNote>슬라이더를 움직이거나 막대를 눌러 추천 기준을 바꿔보세요.</RhythmNote>
+                </div>
+                <SelectedTime>{form.hour}:00</SelectedTime>
+              </TimelineHeader>
+              <Slider
+                min="0"
+                max="23"
+                step="1"
+                value={form.hour}
+                aria-label="탑승 시간 선택"
+                onChange={(event) => setForm((current) => ({ ...current, hour: event.target.value }))}
+              />
               <CrowdingChart
                 data={hourly}
                 selectedHour={Number(form.hour)}
                 onSelectHour={(hour) => setForm((current) => ({ ...current, hour: String(hour) }))}
+                embedded
               />
-            </RightStack>
+            </TimeExplorePanel>
           </ExploreGrid>
 
           <RhythmPanel>
             <RhythmHeader>
               <div>
-                <SectionTitle>하루 혼잡 리듬</SectionTitle>
-                <RhythmNote>시간대를 눌러 추천 기준을 바꿔보세요. 막대가 높을수록 더 붐빕니다.</RhythmNote>
+                <SectionTitle>하루 시간대별 패턴</SectionTitle>
+                <RhythmNote>색과 높이로 하루 전체 혼잡 흐름을 압축해서 보여줍니다.</RhythmNote>
               </div>
             </RhythmHeader>
             <RhythmScroll>
-              <RhythmGroups>
-                {rhythmGroups.map((group) => (
-                  <RhythmGroup key={group.label}>
-                    <PeriodTitle>
-                      <span>{group.label}</span>
-                      <span>{group.range}</span>
-                    </PeriodTitle>
-                    <HourRail style={{ '--hour-count': group.hours.length }}>
-                      {group.hours.map((hour) => {
-                        const cell = hourly.find((item) => Number(item.hour) === hour);
-                        const active = Number(form.hour) === hour;
-                        const height = cell ? Math.max(14, Math.round((cell.passengers / maxPassengers) * 100)) : 0;
+              <TimeStrip>
+                {Array.from({ length: 24 }, (_, hour) => {
+                  const cell = hourly.find((item) => Number(item.hour) === hour);
+                  const active = Number(form.hour) === hour;
+                  const height = cell ? Math.max(12, Math.round((cell.passengers / maxPassengers) * 100)) : 0;
 
-                        return (
-                          <HourButton
-                            key={`${group.label}-${hour}`}
-                            type="button"
-                            title={cell ? `${hour}시 / 예상 ${cell.passengers}명 / ${cell.crowding}` : `${hour}시 데이터 없음`}
-                            $active={active}
-                            $clickable={Boolean(cell)}
-                            disabled={!cell}
-                            onClick={() => {
-                              if (!cell) return;
-                              setForm((current) => ({ ...current, hour: String(hour) }));
-                            }}
-                          >
-                            <DensityTrack>
-                              <DensityFill $height={height} $level={cell?.crowding} />
-                            </DensityTrack>
-                            <HourLabel>{hour}시</HourLabel>
-                            <PassengerLabel>{cell ? `${cell.passengers}명` : '-'}</PassengerLabel>
-                          </HourButton>
-                        );
-                      })}
-                    </HourRail>
-                  </RhythmGroup>
-                ))}
-              </RhythmGroups>
+                  return (
+                    <TimeStripButton
+                      key={hour}
+                      type="button"
+                      title={cell ? `${hour}시 / 예상 ${cell.passengers}명 / ${cell.crowding}` : `${hour}시 데이터 없음`}
+                      $active={active}
+                      $clickable={Boolean(cell)}
+                      disabled={!cell}
+                      onClick={() => {
+                        if (!cell) return;
+                        setForm((current) => ({ ...current, hour: String(hour) }));
+                      }}
+                    >
+                      <DensityTrack>
+                        <DensityFill $height={height} $level={cell?.crowding} />
+                      </DensityTrack>
+                      <HourLabel>{hour}</HourLabel>
+                    </TimeStripButton>
+                  );
+                })}
+              </TimeStrip>
             </RhythmScroll>
           </RhythmPanel>
         </DashboardFrame>

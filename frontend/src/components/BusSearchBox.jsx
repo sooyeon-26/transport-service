@@ -10,12 +10,12 @@ const Panel = styled.form`
   gap: 12px;
   align-items: end;
   height: 100%;
-  padding: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.7);
+  padding: ${({ $flat }) => ($flat ? '0' : '16px')};
+  border: ${({ $flat }) => ($flat ? '0' : '1px solid rgba(255, 255, 255, 0.7)')};
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.84);
-  box-shadow: 0 18px 48px rgba(45, 54, 82, 0.12);
-  backdrop-filter: blur(20px);
+  background: ${({ $flat }) => ($flat ? 'transparent' : 'rgba(255, 255, 255, 0.84)')};
+  box-shadow: ${({ $flat }) => ($flat ? 'none' : '0 18px 48px rgba(45, 54, 82, 0.12)')};
+  backdrop-filter: ${({ $flat }) => ($flat ? 'none' : 'blur(20px)')};
 
   @media (max-width: 760px) {
     grid-template-columns: 1fr 1fr;
@@ -101,7 +101,7 @@ const OptionButton = styled.button`
   min-height: 36px;
   border: 0;
   border-radius: 6px;
-  background: ${({ $active }) => ($active ? '#edf8ff' : 'transparent')};
+  background: ${({ $active, $focused }) => ($active || $focused ? '#edf8ff' : 'transparent')};
   color: #27253d;
   padding: 8px 10px;
   text-align: left;
@@ -121,20 +121,33 @@ const EmptyOption = styled.div`
 `;
 
 const Button = styled.button`
-  min-height: 44px;
+  min-height: 50px;
   border: 0;
   border-radius: 6px;
-  background: #2f8df4;
+  background: linear-gradient(135deg, #1f8fff, #0f63d8);
   color: white;
-  font-weight: 800;
+  font-weight: 900;
   font-size: 15px;
-  padding: 0 18px;
+  padding: 0 22px;
   display: inline-flex;
   gap: 8px;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   white-space: nowrap;
+  box-shadow: 0 16px 34px rgba(31, 143, 255, 0.34);
+  transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    background: linear-gradient(135deg, #147fea, #0b58c8);
+    box-shadow: 0 20px 42px rgba(31, 143, 255, 0.44);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 12px 26px rgba(31, 143, 255, 0.32);
+  }
 
   &:disabled {
     cursor: wait;
@@ -149,20 +162,62 @@ const Button = styled.button`
 
 function SearchableField({ label, name, value, options, placeholder, inputMode, onChange }) {
   const [open, setOpen] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
   const normalizedValue = String(value || '');
   const normalizedOptions = useMemo(
     () => Array.from(new Set((options || []).filter(Boolean).map(String))),
     [options]
   );
-  const filteredOptions = useMemo(() => {
+
+  const visibleOptions = useMemo(() => {
+    if (!searching) return normalizedOptions.slice(0, 80);
     const query = normalizedValue.trim().toLowerCase();
     if (!query) return normalizedOptions.slice(0, 80);
     return normalizedOptions.filter((option) => option.toLowerCase().includes(query)).slice(0, 80);
-  }, [normalizedOptions, normalizedValue]);
+  }, [normalizedOptions, normalizedValue, searching]);
+
+  const openOptions = (nextSearching = false) => {
+    setSearching(nextSearching);
+    setOpen(true);
+    const selectedIndex = normalizedOptions.findIndex((option) => option === normalizedValue);
+    setActiveIndex(selectedIndex >= 0 && selectedIndex < 80 ? selectedIndex : 0);
+  };
 
   const selectValue = (nextValue) => {
     onChange({ target: { name, value: nextValue } });
+    setSearching(false);
     setOpen(false);
+  };
+
+  const handleKeyDown = (event) => {
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      if (!open) {
+        openOptions(false);
+        return;
+      }
+      setActiveIndex((current) => Math.min(current + 1, Math.max(visibleOptions.length - 1, 0)));
+    }
+
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      if (!open) {
+        openOptions(false);
+        return;
+      }
+      setActiveIndex((current) => Math.max(current - 1, 0));
+    }
+
+    if (event.key === 'Enter' && open && visibleOptions[activeIndex]) {
+      event.preventDefault();
+      selectValue(visibleOptions[activeIndex]);
+    }
+
+    if (event.key === 'Escape') {
+      setSearching(false);
+      setOpen(false);
+    }
   };
 
   return (
@@ -174,31 +229,54 @@ function SearchableField({ label, name, value, options, placeholder, inputMode, 
           value={normalizedValue}
           onChange={(event) => {
             onChange(event);
+            setSearching(true);
             setOpen(true);
+            setActiveIndex(0);
           }}
-          onFocus={() => setOpen(true)}
-          onBlur={() => window.setTimeout(() => setOpen(false), 120)}
+          onFocus={() => openOptions(false)}
+          onClick={() => openOptions(false)}
+          onKeyDown={handleKeyDown}
+          onBlur={() =>
+            window.setTimeout(() => {
+              setSearching(false);
+              setOpen(false);
+            }, 120)
+          }
           inputMode={inputMode}
           placeholder={placeholder}
           autoComplete="off"
+          role="combobox"
+          aria-expanded={open}
+          aria-autocomplete="list"
         />
         <ComboToggle
           type="button"
           aria-label={`${label} 선택지 열기`}
           onMouseDown={(event) => event.preventDefault()}
-          onClick={() => setOpen((current) => !current)}
+          onClick={() => {
+            if (open) {
+              setOpen(false);
+              setSearching(false);
+              return;
+            }
+            openOptions(false);
+          }}
         >
           <ChevronDown size={17} aria-hidden="true" />
         </ComboToggle>
         {open && (
-          <OptionList>
-            {filteredOptions.length ? (
-              filteredOptions.map((option) => (
+          <OptionList role="listbox">
+            {visibleOptions.length ? (
+              visibleOptions.map((option, index) => (
                 <OptionButton
                   key={option}
                   type="button"
                   $active={option === normalizedValue}
+                  $focused={index === activeIndex}
+                  role="option"
+                  aria-selected={option === normalizedValue}
                   onMouseDown={(event) => event.preventDefault()}
+                  onMouseEnter={() => setActiveIndex(index)}
                   onClick={() => selectValue(option)}
                 >
                   {option}
@@ -214,7 +292,7 @@ function SearchableField({ label, name, value, options, placeholder, inputMode, 
   );
 }
 
-function BusSearchBox({ form, setForm, onSubmit, loading, options, showHour = false, submitLabel = '예측하기' }) {
+function BusSearchBox({ form, setForm, onSubmit, loading, options, showHour = false, submitLabel = '예측하기', variant = 'card' }) {
   const stationOptions = options.stations || [];
 
   const update = (event) => {
@@ -228,7 +306,7 @@ function BusSearchBox({ form, setForm, onSubmit, loading, options, showHour = fa
   };
 
   return (
-    <Panel onSubmit={onSubmit} $showHour={showHour}>
+    <Panel onSubmit={onSubmit} $showHour={showHour} $flat={variant === 'flat'}>
       <SearchableField
         label="버스 번호"
         name="route"

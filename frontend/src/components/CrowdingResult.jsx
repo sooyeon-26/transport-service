@@ -6,14 +6,14 @@ const crowdingColor = {
   여유: '#bff3de',
   보통: '#dff1ff',
   혼잡: '#ffe0c4',
-  '매우 혼잡': '#ece8ff'
+  '매우 혼잡': '#ffd7d7'
 };
 
 const crowdingTextColor = {
   여유: '#22644f',
   보통: '#2878d8',
   혼잡: '#9a5721',
-  '매우 혼잡': '#5a4bd8'
+  '매우 혼잡': '#b83232'
 };
 
 const Panel = styled.section`
@@ -225,7 +225,7 @@ function CrowdingResult({ result, quietHours, peakHours, selectedHour, onSelectH
       <Panel>
         <Inner>
           <Main>
-            <Eyebrow>BOARDING CHECK</Eyebrow>
+            <Eyebrow>현재 탑승 상태</Eyebrow>
             <Question>노선과 시간을 고르면 바로 판단해드려요.</Question>
             <Recommendation>처음 화면에서 조건을 선택하면 이 영역이 탑승 추천으로 바뀝니다.</Recommendation>
           </Main>
@@ -242,7 +242,7 @@ function CrowdingResult({ result, quietHours, peakHours, selectedHour, onSelectH
     <Panel>
       <Inner>
         <Main>
-          <Eyebrow>BOARDING CHECK · {selectedHour}시 기준</Eyebrow>
+          <Eyebrow>현재 탑승 상태 · {selectedHour}시 기준</Eyebrow>
           <Question>
             {selectedQuiet ? '지금 타도 괜찮아요.' : `${result.predictedCrowding}해질 수 있어요.`}
           </Question>
@@ -272,7 +272,7 @@ function CrowdingResult({ result, quietHours, peakHours, selectedHour, onSelectH
         </Main>
 
         <Aside>
-          <MiniTitle>RECOMMENDATION</MiniTitle>
+          <MiniTitle>추천 시간</MiniTitle>
           {best && (
             <InsightCard>
               <InsightHead>
@@ -297,7 +297,7 @@ function CrowdingResult({ result, quietHours, peakHours, selectedHour, onSelectH
               </InsightValue>
             </InsightCard>
           )}
-          <MiniTitle>QUIET HOURS</MiniTitle>
+          <MiniTitle>한산한 시간대</MiniTitle>
           <QuietList>
             {quietHours.slice(0, 3).map((item, index) => (
               <QuietItem key={item.hour} type="button" onClick={() => onSelectHour?.(item.hour)}>

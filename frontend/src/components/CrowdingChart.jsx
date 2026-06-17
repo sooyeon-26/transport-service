@@ -15,16 +15,16 @@ const COLORS = {
   여유: '#bff3de',
   보통: '#8fd8ff',
   혼잡: '#ffbd8a',
-  '매우 혼잡': '#9a8cff'
+  '매우 혼잡': '#ff6b6b'
 };
 
 const Panel = styled.section`
-  border: 1px solid rgba(255, 255, 255, 0.7);
+  border: ${({ $embedded }) => ($embedded ? '0' : '1px solid rgba(255, 255, 255, 0.7)')};
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.84);
-  padding: 18px;
-  box-shadow: 0 18px 48px rgba(45, 54, 82, 0.12);
-  backdrop-filter: blur(20px);
+  background: ${({ $embedded }) => ($embedded ? 'transparent' : 'rgba(255, 255, 255, 0.84)')};
+  padding: ${({ $embedded }) => ($embedded ? '0' : '18px')};
+  box-shadow: ${({ $embedded }) => ($embedded ? 'none' : '0 18px 48px rgba(45, 54, 82, 0.12)')};
+  backdrop-filter: ${({ $embedded }) => ($embedded ? 'none' : 'blur(20px)')};
 `;
 
 const Header = styled.div`
@@ -84,22 +84,24 @@ const Empty = styled.div`
   border-radius: 8px;
 `;
 
-function CrowdingChart({ data, selectedHour, onSelectHour }) {
+function CrowdingChart({ data, selectedHour, onSelectHour, embedded = false }) {
   return (
-    <Panel>
-      <Header>
-        <div>
-          <Title>시간대별 흐름</Title>
-          <Subtitle>막대를 눌러 다른 시간대를 확인하세요.</Subtitle>
-        </div>
-        <Legend>
-          {Object.entries(COLORS).map(([label, color]) => (
-            <LegendItem key={label} $color={color}>
-              {label}
-            </LegendItem>
-          ))}
-        </Legend>
-      </Header>
+    <Panel $embedded={embedded}>
+      {!embedded && (
+        <Header>
+          <div>
+            <Title>시간대별 혼잡도 추이</Title>
+            <Subtitle>막대를 눌러 다른 시간대를 확인하세요.</Subtitle>
+          </div>
+          <Legend>
+            {Object.entries(COLORS).map(([label, color]) => (
+              <LegendItem key={label} $color={color}>
+                {label}
+              </LegendItem>
+            ))}
+          </Legend>
+        </Header>
+      )}
       {data.length ? (
         <ResponsiveContainer width="100%" height={260}>
           <BarChart data={data} margin={{ top: 8, right: 10, bottom: 0, left: -18 }}>
