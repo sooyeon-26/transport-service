@@ -1,13 +1,18 @@
 import React, { useMemo, useState } from 'react';
 import styled from 'styled-components';
-import { ChevronDown, Search } from 'lucide-react';
+import { BusFront, CalendarDays, ChevronDown, MapPin, Search } from 'lucide-react';
 
 const Panel = styled.form`
   position: relative;
   z-index: 50;
   display: grid;
-  grid-template-columns: ${({ $showHour }) => ($showHour ? '1fr 1.45fr 0.75fr auto' : '1fr 1.5fr auto')};
-  gap: 12px;
+  grid-template-columns: ${({ $showHour, $showMonth }) => {
+    if ($showHour && $showMonth) return 'minmax(112px, 0.8fr) minmax(220px, 1.4fr) minmax(132px, 0.72fr) minmax(132px, 0.72fr) auto';
+    if ($showMonth) return 'minmax(190px, 1fr) minmax(210px, 1fr) minmax(180px, 0.72fr)';
+    if ($showHour) return '1fr 1.45fr 0.75fr auto';
+    return '1fr 1.5fr auto';
+  }};
+  gap: 16px;
   align-items: end;
   height: 100%;
   padding: ${({ $flat }) => ($flat ? '0' : '16px')};
@@ -17,32 +22,63 @@ const Panel = styled.form`
   box-shadow: ${({ $flat }) => ($flat ? 'none' : '0 18px 48px rgba(45, 54, 82, 0.12)')};
   backdrop-filter: ${({ $flat }) => ($flat ? 'none' : 'blur(20px)')};
 
+  ${({ $showMonth, $showHour }) =>
+    $showMonth && !$showHour
+      ? `
+        > label:nth-of-type(1) {
+          grid-column: 1 / 2;
+        }
+
+        > label:nth-of-type(2) {
+          grid-column: 2 / 3;
+        }
+
+        > label:nth-of-type(3) {
+          grid-column: 3 / 4;
+        }
+
+        > button {
+          grid-column: 1 / -1;
+        }
+      `
+      : ''}
+
+  @media (max-width: 1100px) {
+    grid-template-columns: ${({ $showHour, $showMonth }) => ($showHour || $showMonth ? '1fr 1fr' : '1fr 1.5fr auto')};
+  }
+
   @media (max-width: 760px) {
     grid-template-columns: 1fr 1fr;
   }
 
   @media (max-width: 640px) {
     grid-template-columns: 1fr;
+
+    > label,
+    > button {
+      grid-column: 1 / -1;
+    }
   }
 `;
 
 const Field = styled.label`
+  min-width: 0;
   display: grid;
   gap: 7px;
-  color: #464b65;
-  font-size: 13px;
-  font-weight: 700;
+  color: #11172f;
+  font-size: 15px;
+  font-weight: 950;
 `;
 
 const inputStyles = `
   width: 100%;
-  min-height: 44px;
-  border: 1px solid #dae0f1;
-  border-radius: 6px;
-  background: rgba(250, 251, 255, 0.78);
+  min-height: 58px;
+  border: 2px solid #d4deee;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.78);
   color: #27253d;
-  font-size: 15px;
-  padding: 0 12px;
+  font-size: 18px;
+  padding: 0 48px 0 18px;
   outline: none;
 
   &:focus {
@@ -62,13 +98,13 @@ const ComboWrap = styled.div`
 `;
 
 const ComboInput = styled(Input)`
-  padding-right: 38px;
+  padding-right: 76px;
 `;
 
 const ComboToggle = styled.button`
   position: absolute;
   top: 50%;
-  right: 8px;
+  right: 12px;
   width: 28px;
   height: 28px;
   display: inline-grid;
@@ -76,9 +112,20 @@ const ComboToggle = styled.button`
   border: 0;
   border-radius: 6px;
   background: transparent;
-  color: #69718d;
+  color: #9ca7bb;
   cursor: pointer;
   transform: translateY(-50%);
+`;
+
+const FieldIcon = styled.span`
+  position: absolute;
+  right: 48px;
+  top: 50%;
+  display: inline-grid;
+  place-items: center;
+  color: #9ca7bb;
+  transform: translateY(-50%);
+  pointer-events: none;
 `;
 
 const OptionList = styled.div`
@@ -121,13 +168,13 @@ const EmptyOption = styled.div`
 `;
 
 const Button = styled.button`
-  min-height: 50px;
+  min-height: 62px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 14px;
   background: linear-gradient(135deg, #1f8fff, #0f63d8);
   color: white;
   font-weight: 900;
-  font-size: 15px;
+  font-size: 22px;
   padding: 0 22px;
   display: inline-flex;
   gap: 8px;
@@ -160,7 +207,7 @@ const Button = styled.button`
   }
 `;
 
-function SearchableField({ label, name, value, options, placeholder, inputMode, onChange }) {
+function SearchableField({ label, name, value, options, placeholder, inputMode, onChange, icon: Icon }) {
   const [open, setOpen] = useState(false);
   const [searching, setSearching] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -264,6 +311,11 @@ function SearchableField({ label, name, value, options, placeholder, inputMode, 
         >
           <ChevronDown size={17} aria-hidden="true" />
         </ComboToggle>
+        {Icon && (
+          <FieldIcon>
+            <Icon size={21} aria-hidden="true" />
+          </FieldIcon>
+        )}
         {open && (
           <OptionList role="listbox">
             {visibleOptions.length ? (
@@ -292,7 +344,7 @@ function SearchableField({ label, name, value, options, placeholder, inputMode, 
   );
 }
 
-function BusSearchBox({ form, setForm, onSubmit, loading, options, showHour = false, submitLabel = '예측하기', variant = 'card' }) {
+function BusSearchBox({ form, setForm, onSubmit, loading, options, showHour = false, showMonth = false, submitLabel = '예측하기', variant = 'card' }) {
   const stationOptions = options.stations || [];
 
   const update = (event) => {
@@ -306,24 +358,46 @@ function BusSearchBox({ form, setForm, onSubmit, loading, options, showHour = fa
   };
 
   return (
-    <Panel onSubmit={onSubmit} $showHour={showHour} $flat={variant === 'flat'}>
+    <Panel onSubmit={onSubmit} $showHour={showHour} $showMonth={showMonth} $flat={variant === 'flat'}>
       <SearchableField
         label="버스 번호"
         name="route"
         value={form.route}
         options={options.routes?.length ? options.routes : [form.route]}
         inputMode="numeric"
-        placeholder="노선 검색"
+        placeholder="예) 160"
         onChange={update}
+        icon={BusFront}
       />
       <SearchableField
         label="정류장명"
         name="station"
         value={form.station}
         options={stationOptions.length ? stationOptions : [form.station]}
-        placeholder="정류장 검색"
+        placeholder="예) 강남역"
         onChange={update}
+        icon={MapPin}
       />
+      {showMonth && (
+        <Field>
+          기준 월 (선택)
+          <ComboWrap>
+            <Select name="month" value={form.month || ''} onChange={update}>
+              <option value="" disabled>
+                2024-05
+              </option>
+              {(options.months?.length ? options.months : []).map((month) => (
+                <option key={month.value} value={month.value}>
+                  {String(month.value || month.label).replace(/^(\d{4})(\d{2})$/, '$1-$2')}
+                </option>
+              ))}
+            </Select>
+            <FieldIcon>
+              <CalendarDays size={21} aria-hidden="true" />
+            </FieldIcon>
+          </ComboWrap>
+        </Field>
+      )}
       {showHour && (
         <Field>
           시간대

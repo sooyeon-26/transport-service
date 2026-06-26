@@ -16,6 +16,13 @@ const crowdingTextColor = {
   '매우 혼잡': '#b83232'
 };
 
+const crowdingHeadline = {
+  여유: '지금 타도 괜찮아요.',
+  보통: '조금 붐빌 수 있어요.',
+  혼잡: '지금은 꽤 붐빌 수 있어요.',
+  '매우 혼잡': '지금은 많이 붐빌 수 있어요.'
+};
+
 const Panel = styled.section`
   min-height: 100%;
   border: 1px solid rgba(255, 255, 255, 0.7);
@@ -237,15 +244,14 @@ function CrowdingResult({ result, quietHours, peakHours, selectedHour, onSelectH
   const selectedQuiet = result.predictedCrowding === '여유';
   const best = result.bestHour || quietHours[0];
   const peak = peakHours[0];
+  const headline = crowdingHeadline[result.predictedCrowding] || '혼잡도를 확인해보세요.';
 
   return (
     <Panel>
       <Inner>
         <Main>
           <Eyebrow>현재 탑승 상태 · {selectedHour}시 기준</Eyebrow>
-          <Question>
-            {selectedQuiet ? '지금 타도 괜찮아요.' : `${result.predictedCrowding}해질 수 있어요.`}
-          </Question>
+          <Question>{headline}</Question>
           <MainLine>
             <Badge $label={result.predictedCrowding}>
               {selectedQuiet ? <CheckCircle2 size={18} aria-hidden="true" /> : <AlertTriangle size={18} aria-hidden="true" />}

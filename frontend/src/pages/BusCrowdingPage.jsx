@@ -1,23 +1,284 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import styled from 'styled-components';
-import { MapPinned, Navigation, Route } from 'lucide-react';
+import styled, { keyframes } from 'styled-components';
+import { BarChart3, Clock3, Database, Gauge, Heart, RotateCcw, Smile, Target, TrendingDown, Users } from 'lucide-react';
 import { fetchHourly, fetchOptions, fetchStations } from '../api/busApi.js';
 import BusSearchBox from '../components/BusSearchBox.jsx';
 import CrowdingChart from '../components/CrowdingChart.jsx';
-import CrowdingResult from '../components/CrowdingResult.jsx';
+
+const splashOut = keyframes`
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+`;
+
+const logoReveal = keyframes`
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+`;
+
+const busFloat = keyframes`
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) translateY(0) rotate(-0.4deg) scale(1);
+  }
+
+  28% {
+    opacity: 1;
+    transform: translate(-50%, -50%) translateY(-12px) rotate(0.35deg) scale(1.015);
+  }
+
+  52% {
+    opacity: 1;
+    transform: translate(-50%, -50%) translateY(0) rotate(-0.2deg) scale(1);
+  }
+
+  68% {
+    opacity: 0.5;
+    transform: translate(-50%, -50%) translateY(2px) rotate(0deg) scale(0.98);
+  }
+
+  86%,
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) translateY(6px) rotate(0deg) scale(0.92);
+  }
+`;
+
+const roadLineDrift = keyframes`
+  0% {
+    transform: translate3d(300px, 0, 0);
+    opacity: 0;
+  }
+
+  18%,
+  82% {
+    opacity: 0.68;
+  }
+
+  100% {
+    transform: translate3d(-360px, 0, 0);
+    opacity: 0;
+  }
+`;
+
+const roadSceneFade = keyframes`
+  0%,
+  58% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0.24;
+  }
+`;
+
+const landingBusFloat = keyframes`
+  0%,
+  100% {
+    transform: translateY(0) rotate(-0.5deg);
+  }
+
+  50% {
+    transform: translateY(-10px) rotate(0.4deg);
+  }
+`;
+
+const landingLaneDrift = keyframes`
+  0% {
+    transform: translate3d(260px, 0, 0);
+    opacity: 0;
+  }
+
+  16%,
+  84% {
+    opacity: 0.72;
+  }
+
+  100% {
+    transform: translate3d(-360px, 0, 0);
+    opacity: 0;
+  }
+`;
 
 const Shell = styled.main`
   min-height: 100vh;
+  min-height: 100svh;
   background:
-    radial-gradient(circle at 18% 12%, rgba(255, 255, 255, 0.64), transparent 34%),
-    radial-gradient(circle at 84% 16%, rgba(219, 240, 255, 0.48), transparent 32%),
-    linear-gradient(135deg, ${({ $tone }) => $tone?.overlayStart || 'rgba(251, 248, 255, 0.72)'}, ${({ $tone }) => $tone?.overlayMid || 'rgba(228, 246, 255, 0.62)'} 48%, ${({ $tone }) => $tone?.overlayEnd || 'rgba(247, 242, 255, 0.74)'}),
-    url(${({ $background }) => $background});
+    radial-gradient(circle at 8% 32%, rgba(255, 255, 255, 0.96), transparent 30%),
+    radial-gradient(circle at 74% 8%, rgba(255, 255, 255, 0.64), transparent 26%),
+    linear-gradient(145deg, #f6fbff 0%, #dff0ff 45%, #f7fbff 100%);
   background-size: cover;
-  background-position: ${({ $position }) => $position};
+  background-position: center;
   background-attachment: fixed;
   color: #27253d;
   transition: background-position 500ms ease, background-image 500ms ease;
+`;
+
+const SplashOverlay = styled.div`
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 26% 20%, rgba(255, 255, 255, 0.82), transparent 34%),
+    linear-gradient(135deg, rgba(248, 252, 255, 0.96), rgba(227, 243, 255, 0.94) 48%, rgba(247, 244, 255, 0.96));
+  animation: ${splashOut} 420ms ease 2400ms forwards;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation-duration: 180ms;
+    animation-delay: 720ms;
+  }
+`;
+
+const SplashScene = styled.div`
+  position: relative;
+  width: min(900px, 90vw);
+  min-height: 340px;
+  display: grid;
+  place-items: center;
+`;
+
+const SplashRoad = styled.div`
+  position: absolute;
+  left: 50%;
+  top: 60%;
+  width: clamp(430px, 48vw, 680px);
+  height: 170px;
+  pointer-events: none;
+  overflow: hidden;
+  transform: translateX(-50%) rotate(-24deg) skewX(-6deg);
+  transform-origin: center;
+  animation: ${roadSceneFade} 2200ms ease forwards;
+  z-index: 0;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 10%;
+    right: 8%;
+    top: 34%;
+    height: 62%;
+    border-radius: 50%;
+    background: radial-gradient(ellipse at center, rgba(91, 151, 231, 0.16), rgba(91, 151, 231, 0) 68%);
+    filter: blur(1px);
+  }
+
+  span {
+    position: absolute;
+    left: 50%;
+    top: 52%;
+    width: clamp(150px, 14vw, 210px);
+    height: clamp(16px, 1.8vw, 22px);
+    border-radius: 999px;
+    background: linear-gradient(90deg, rgba(56, 134, 244, 0), rgba(72, 151, 255, 0.68) 14%, rgba(92, 168, 255, 0.76) 82%, rgba(56, 134, 244, 0));
+    box-shadow:
+      0 10px 18px rgba(48, 121, 222, 0.13),
+      inset 0 1px 0 rgba(255, 255, 255, 0.45);
+    animation: ${roadLineDrift} 1650ms linear infinite;
+  }
+
+  span:nth-child(2) {
+    top: 68%;
+    width: clamp(170px, 16vw, 240px);
+    animation-delay: -550ms;
+  }
+
+  span:nth-child(3) {
+    top: 36%;
+    width: clamp(120px, 12vw, 180px);
+    animation-delay: -1100ms;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    span {
+      animation: none;
+      opacity: 0.36;
+    }
+  }
+`;
+
+const SplashBusStage = styled.div`
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+`;
+
+const BusImageWrapper = styled.div`
+  position: absolute;
+  left: 50%;
+  top: 52%;
+  width: clamp(250px, 34vw, 470px);
+  animation: ${busFloat} 2200ms ease-in-out forwards;
+  transform-origin: center;
+  filter: drop-shadow(20px 28px 18px rgba(43, 103, 199, 0.18));
+  z-index: 1;
+
+  img {
+    width: 100%;
+    height: auto;
+    display: block;
+    object-fit: contain;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+    transform: translate(-50%, -50%);
+  }
+`;
+
+const SplashLogo = styled.div`
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  opacity: 0;
+  transform: translateY(16px) scale(0.98);
+  animation: ${logoReveal} 680ms ease 1500ms forwards;
+  z-index: 2;
+`;
+
+const SplashBrand = styled.div`
+  color: #27253d;
+  font-size: clamp(48px, 8vw, 86px);
+  font-weight: 950;
+  line-height: 1;
+  letter-spacing: 0;
+`;
+
+const SplashTagline = styled.div`
+  color: #2878d8;
+  font-size: clamp(13px, 2.1vw, 16px);
+  font-weight: 900;
+`;
+
+const SplashSkip = styled.button`
+  position: absolute;
+  right: 24px;
+  top: 24px;
+  min-height: 36px;
+  border: 1px solid rgba(218, 224, 241, 0.86);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.74);
+  color: #464b65;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
+  backdrop-filter: blur(14px);
+
+  &:hover {
+    background: #ffffff;
+  }
+
+  @media (max-width: 640px) {
+    right: 14px;
+    top: 14px;
+  }
 `;
 
 const Content = styled.div`
@@ -32,9 +293,10 @@ const Content = styled.div`
 
 const IntroLayer = styled.div`
   min-height: 100vh;
+  min-height: 100svh;
   display: grid;
-  place-items: start center;
-  padding: clamp(36px, 7vh, 60px) 24px 32px;
+  place-items: center;
+  padding: 24px;
 
   @media (max-width: 720px) {
     padding: 18px 12px;
@@ -228,17 +490,17 @@ const ControlDeck = styled.section`
 `;
 
 const LocationPlate = styled.article`
-  min-height: 94px;
-  border: 1px solid rgba(218, 224, 241, 0.76);
+  min-height: 100px;
+  border: 1px solid rgba(218, 224, 241, 0.82);
   border-radius: 8px;
   overflow: hidden;
   position: relative;
   display: grid;
-  align-content: end;
-  padding: 16px;
+  align-content: center;
+  padding: 18px;
   color: #27253d;
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.68), rgba(239, 247, 255, 0.56)),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(241, 248, 255, 0.72)),
     linear-gradient(150deg, #f8fbff 0%, #eef7ff 46%, #f8f4ff 100%);
   box-shadow: none;
   backdrop-filter: none;
@@ -247,7 +509,9 @@ const LocationPlate = styled.article`
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.82));
+    background:
+      linear-gradient(90deg, rgba(255, 255, 255, 0.92) 0%, rgba(255, 255, 255, 0.72) 52%, rgba(255, 255, 255, 0.18) 100%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.56));
     pointer-events: none;
   }
 `;
@@ -256,7 +520,7 @@ const SeoulMap = styled.div`
   position: absolute;
   inset: 0;
   color: #9ba8c5;
-  opacity: 0.95;
+  opacity: 0.7;
 
   svg {
     width: 100%;
@@ -269,8 +533,8 @@ const MapMarker = styled.div`
   position: absolute;
   left: ${({ $x }) => $x}%;
   top: ${({ $y }) => $y}%;
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   border: 4px solid white;
   border-radius: 999px;
   background: #2f8df4;
@@ -290,34 +554,48 @@ const MapMarker = styled.div`
 const LocationContent = styled.div`
   position: relative;
   z-index: 2;
+  display: grid;
+  gap: 9px;
+  max-width: 92%;
 `;
 
 const StationMeta = styled.div`
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 8px;
+  gap: 7px;
 `;
 
 const MetaChip = styled.span`
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  border: 1px solid rgba(218, 224, 241, 0.9);
+  border: 1px solid rgba(218, 224, 241, 0.82);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.72);
-  padding: 7px 10px;
+  background: rgba(255, 255, 255, 0.68);
+  padding: 6px 9px;
   color: #464b65;
   font-size: 12px;
   font-weight: 900;
   backdrop-filter: blur(8px);
 `;
 
+const LocationKicker = styled.div`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  color: #2878d8;
+  font-size: 12px;
+  font-weight: 950;
+`;
+
 const StationTitle = styled.h2`
   margin: 0;
-  font-size: clamp(22px, 2.5vw, 32px);
+  color: #27253d;
+  font-size: clamp(24px, 2.8vw, 34px);
   line-height: 1.12;
   letter-spacing: 0;
+  word-break: keep-all;
 `;
 
 const SearchPlate = styled.div`
@@ -511,10 +789,740 @@ const ExploreGrid = styled.section`
   gap: 12px;
 `;
 
+const resultToneMap = {
+  여유: {
+    accent: '#00a884',
+    accentSoft: '#e8f8f3',
+    text: '#007a63',
+    cardStart: '#ffffff',
+    cardMid: '#f3fbff',
+    cardEnd: '#e8f8f3',
+    shadow: 'rgba(0, 168, 132, 0.12)',
+    gaugeTrack: '#e7f0f7',
+    caption: '여유로운 구간'
+  },
+  보통: {
+    accent: '#4ba3f2',
+    accentSoft: '#e8f3ff',
+    text: '#2f80ed',
+    cardStart: '#ffffff',
+    cardMid: '#f5faff',
+    cardEnd: '#e8f3ff',
+    shadow: 'rgba(47, 128, 237, 0.12)',
+    gaugeTrack: '#e7f0f7',
+    caption: '보통 수준 구간'
+  },
+  혼잡: {
+    accent: '#ff9f43',
+    accentSoft: '#fff3e4',
+    text: '#c66a16',
+    cardStart: '#ffffff',
+    cardMid: '#f5faff',
+    cardEnd: '#fff2e3',
+    shadow: 'rgba(255, 159, 67, 0.14)',
+    gaugeTrack: '#edf3f8',
+    caption: '주의가 필요한 구간'
+  },
+  '매우 혼잡': {
+    accent: '#ff6b6b',
+    accentSoft: '#ffecec',
+    text: '#d94848',
+    cardStart: '#ffffff',
+    cardMid: '#fff7f7',
+    cardEnd: '#ffecec',
+    shadow: 'rgba(255, 107, 107, 0.14)',
+    gaugeTrack: '#f0eef2',
+    caption: '혼잡도가 높은 구간'
+  }
+};
+
+const PageWrap = styled.div`
+  width: min(1348px, calc(100% - 96px));
+  margin: 0 auto;
+  padding: 20px 0 38px;
+
+  @media (max-width: 760px) {
+    width: min(100% - 24px, 720px);
+    padding-top: 12px;
+  }
+`;
+
+const SiteHeader = styled.header`
+  min-height: 60px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.86);
+  padding: 0 34px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  backdrop-filter: blur(18px);
+
+  @media (max-width: 820px) {
+    align-items: flex-start;
+    border-radius: 20px;
+    display: grid;
+  }
+`;
+
+const BrandGroup = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  min-width: 0;
+`;
+
+const BrandLogo = styled.div`
+  display: inline-block;
+  color: #0b1220;
+  font-family: 'Do Hyeon', 'Black Han Sans', sans-serif;
+  font-size: clamp(25px, 2.2vw, 29px);
+  font-weight: 400;
+  line-height: 0.95;
+  letter-spacing: -0.045em;
+  white-space: nowrap;
+  text-shadow: none;
+  filter: none;
+  -webkit-text-stroke: 0;
+  transform: scaleX(1.02) scaleY(0.9);
+  transform-origin: left center;
+  vertical-align: middle;
+`;
+
+const BrandMeta = styled.div`
+  color: #59627f;
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+`;
+
+const HeaderNav = styled.nav`
+  display: flex;
+  align-items: center;
+  gap: clamp(28px, 3.2vw, 42px);
+
+  a {
+    color: #1f2743;
+    font-size: 14px;
+    font-weight: 800;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 760px) {
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+`;
+
+const SearchHero = styled.section`
+  position: relative;
+  min-height: 620px;
+  display: grid;
+  grid-template-columns: minmax(680px, 0.96fr) minmax(500px, 1fr);
+  gap: 26px;
+  align-items: center;
+  padding: 72px 38px 28px;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 11% 20%, rgba(255, 255, 255, 0.78), transparent 28%),
+      radial-gradient(circle at 82% 18%, rgba(177, 217, 255, 0.24), transparent 32%);
+    pointer-events: none;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 6% -4% 22% -5%;
+    background:
+      linear-gradient(28deg, transparent 0 48%, rgba(116, 171, 239, 0.17) 48% 49%, transparent 49% 100%),
+      linear-gradient(155deg, transparent 0 54%, rgba(116, 171, 239, 0.13) 54% 55%, transparent 55% 100%);
+    opacity: 0.18;
+    pointer-events: none;
+  }
+
+  @media (max-width: 1040px) {
+    grid-template-columns: 1fr;
+    min-height: auto;
+    padding-inline: 0;
+  }
+`;
+
+const HeroText = styled.div`
+  position: relative;
+  z-index: 3;
+`;
+
+const HeroTitle = styled.h1`
+  margin: 0;
+  color: #11172f;
+  font-size: clamp(54px, 5.1vw, 74px);
+  line-height: 1.04;
+  letter-spacing: 0;
+  white-space: nowrap;
+
+  @media (max-width: 1040px) {
+    white-space: normal;
+  }
+`;
+
+const HeroCopy = styled.p`
+  max-width: 600px;
+  margin: 22px 0 0;
+  color: #34405f;
+  font-size: clamp(17px, 1.6vw, 22px);
+  line-height: 1.72;
+`;
+
+const SearchCard = styled.div`
+  position: relative;
+  z-index: 10;
+  margin-top: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 26px;
+  box-shadow: 0 24px 80px rgba(76, 112, 170, 0.18);
+  backdrop-filter: blur(22px);
+`;
+
+const HeroVisual = styled.div`
+  position: relative;
+  z-index: 1;
+  min-height: 500px;
+  overflow: visible;
+
+  @media (max-width: 1040px) {
+    min-height: 390px;
+  }
+`;
+
+const RouteBackdrop = styled.div`
+  position: absolute;
+  inset: -3% -9% 10% -14%;
+  opacity: 0.72;
+  pointer-events: none;
+
+  svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+`;
+
+const HeroRoad = styled.div`
+  position: absolute;
+  left: 2%;
+  right: -22%;
+  bottom: 14%;
+  height: 250px;
+  overflow: hidden;
+  transform: rotate(-20deg) skewX(-6deg);
+  transform-origin: center;
+  pointer-events: none;
+
+  span {
+    position: absolute;
+    left: 42%;
+    top: 44%;
+    width: clamp(210px, 20vw, 330px);
+    height: clamp(14px, 1.4vw, 19px);
+    border-radius: 999px;
+    background: linear-gradient(90deg, rgba(52, 132, 240, 0), rgba(68, 151, 255, 0.7) 14%, rgba(122, 195, 255, 0.8) 84%, rgba(52, 132, 240, 0));
+    box-shadow: 0 12px 22px rgba(35, 111, 220, 0.14);
+    animation: ${landingLaneDrift} 1900ms linear infinite;
+  }
+
+  span:nth-child(2) {
+    top: 62%;
+    width: clamp(260px, 24vw, 400px);
+    animation-delay: -640ms;
+  }
+
+  span:nth-child(3) {
+    top: 27%;
+    width: clamp(140px, 15vw, 230px);
+    animation-delay: -1280ms;
+  }
+`;
+
+const BusHeroImage = styled.img`
+  position: absolute;
+  right: -2%;
+  top: 9%;
+  width: min(560px, 41vw);
+  max-width: 100%;
+  height: auto;
+  display: block;
+  object-fit: contain;
+  filter: drop-shadow(28px 34px 24px rgba(36, 92, 181, 0.2));
+  animation: ${landingBusFloat} 3600ms ease-in-out infinite;
+
+  @media (max-width: 1040px) {
+    left: 50%;
+    right: auto;
+    top: 8%;
+    width: min(560px, 88vw);
+    transform: translateX(-50%);
+  }
+`;
+
+const FeatureGrid = styled.div`
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  margin-top: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 34px 46px;
+  box-shadow: 0 24px 80px rgba(76, 112, 170, 0.14);
+  backdrop-filter: blur(22px);
+
+  @media (max-width: 840px) {
+    grid-template-columns: 1fr;
+    padding-inline: 0;
+    margin-top: 10px;
+  }
+`;
+
+const FeatureCard = styled.article`
+  min-height: 122px;
+  display: grid;
+  grid-template-columns: 46px 1fr;
+  gap: 14px;
+  align-items: center;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0 34px;
+  box-shadow: none;
+  backdrop-filter: none;
+
+  & + & {
+    border-left: 1px solid rgba(194, 211, 236, 0.78);
+  }
+`;
+
+const FeatureIcon = styled.span`
+  width: 88px;
+  height: 88px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 22px;
+  color: #1275ea;
+  background: linear-gradient(145deg, #ffffff, #e6f4ff);
+`;
+
+const FeatureTitle = styled.strong`
+  display: block;
+  color: #11172f;
+  font-size: 22px;
+`;
+
+const FeatureText = styled.span`
+  display: block;
+  margin-top: 5px;
+  color: #59627f;
+  font-size: 16px;
+  font-weight: 750;
+`;
+
+const ResultPage = styled.div`
+  display: grid;
+  gap: 14px;
+  padding-top: 18px;
+`;
+
+const SummaryBar = styled.section`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.78);
+  padding: 14px 18px;
+  box-shadow: 0 18px 48px rgba(45, 117, 210, 0.12);
+  backdrop-filter: blur(20px);
+
+  @media (max-width: 760px) {
+    display: grid;
+  }
+`;
+
+const SummaryText = styled.strong`
+  color: #11172f;
+  font-size: 18px;
+  line-height: 1.4;
+`;
+
+const SecondaryButton = styled.button`
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid rgba(194, 212, 238, 0.9);
+  border-radius: 8px;
+  background: #ffffff;
+  color: #1f72d8;
+  padding: 0 16px;
+  font-size: 14px;
+  font-weight: 950;
+  cursor: pointer;
+  box-shadow: 0 12px 26px rgba(45, 117, 210, 0.1);
+`;
+
+const ResultHeroCard = styled.section`
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(250px, 0.38fr);
+  gap: clamp(16px, 2.4vw, 28px);
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 83% 48%, rgba(255, 255, 255, 0.92) 0%, transparent 28%),
+    radial-gradient(circle at 90% 22%, ${({ $tone }) => $tone?.accentSoft || '#e3f2ff'} 0%, transparent 30%),
+    radial-gradient(circle at 5% 96%, rgba(232, 243, 255, 0.72) 0%, transparent 34%),
+    linear-gradient(135deg, ${({ $tone }) => $tone?.cardStart || '#ffffff'} 0%, ${({ $tone }) => $tone?.cardMid || '#f5faff'} 48%, ${({ $tone }) => $tone?.cardEnd || '#e8f3ff'} 100%);
+  padding: clamp(34px, 4.4vw, 52px);
+  box-shadow:
+    0 34px 90px ${({ $tone }) => $tone?.shadow || 'rgba(45, 117, 210, 0.16)'},
+    0 14px 34px rgba(28, 72, 120, 0.07);
+  backdrop-filter: blur(22px);
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    right: 21%;
+    top: 17%;
+    width: 330px;
+    height: 132px;
+    border-top: 2px dashed ${({ $tone }) => $tone?.accent || '#2f80ed'};
+    border-radius: 50%;
+    opacity: 0.13;
+    transform: rotate(-10deg);
+    pointer-events: none;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    right: 12%;
+    bottom: 16%;
+    width: 190px;
+    height: 38px;
+    border-bottom: 1px solid ${({ $tone }) => $tone?.accent || '#2f80ed'};
+    border-radius: 50%;
+    opacity: 0.1;
+    transform: rotate(-12deg);
+    pointer-events: none;
+  }
+
+  > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  @media (max-width: 860px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const ResultEyebrow = styled.div`
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.58);
+  padding: 7px 11px;
+  color: ${({ $tone }) => $tone?.text || '#1267c9'};
+  font-size: 14px;
+  font-weight: 950;
+`;
+
+const ResultHeadline = styled.h1`
+  margin: 16px 0 0;
+  color: ${({ $tone }) => $tone?.text || '#1267c9'};
+  font-size: clamp(38px, 4.8vw, 62px);
+  line-height: 1.05;
+  letter-spacing: 0;
+`;
+
+const ResultDescription = styled.p`
+  max-width: 680px;
+  margin: 18px 0 0;
+  color: #34405f;
+  font-size: 17px;
+  line-height: 1.7;
+`;
+
+const PercentLine = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  margin-top: 22px;
+`;
+
+const PercentValue = styled.strong`
+  color: ${({ $tone }) => $tone?.text || '#1267c9'};
+  font-size: clamp(62px, 7.8vw, 96px);
+  line-height: 0.95;
+  letter-spacing: -0.035em;
+`;
+
+const GradeBadge = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  background: ${({ $tone }) => $tone?.accentSoft || '#e0f2ff'};
+  color: ${({ $tone }) => $tone?.text || '#1275ea'};
+  padding: 10px 14px;
+  font-size: 16px;
+  font-weight: 950;
+`;
+
+const ResultSideStat = styled.div`
+  min-height: 218px;
+  display: grid;
+  gap: 8px;
+  place-items: center;
+  border: 1px solid rgba(221, 234, 245, 0.82);
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 50% 45%, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.52) 64%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.74), rgba(247, 251, 255, 0.58));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.86),
+    0 10px 24px rgba(16, 24, 47, 0.035);
+  padding: 22px;
+`;
+
+const GaugeLabel = styled.div`
+  color: #59627f;
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: 0.02em;
+`;
+
+const GaugeCircle = styled.div`
+  width: 152px;
+  height: 152px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background:
+    conic-gradient(${({ $tone }) => $tone?.accent || '#2f8df4'} ${({ $percent }) => $percent * 3.6}deg, ${({ $tone }) => $tone?.gaugeTrack || '#e7f0f7'} 0deg),
+    #ffffff;
+  box-shadow:
+    inset 0 0 0 13px #ffffff,
+    inset 0 0 0 14px rgba(221, 234, 245, 0.82),
+    0 18px 34px ${({ $tone }) => $tone?.shadow || 'rgba(45, 117, 210, 0.16)'};
+  color: #11172f;
+  font-size: 28px;
+  font-weight: 900;
+`;
+
+const GaugeCaption = styled.div`
+  color: ${({ $tone }) => $tone?.text || '#2f80ed'};
+  font-size: 12px;
+  font-weight: 900;
+  opacity: 0.86;
+`;
+
+const EvidenceGrid = styled.section`
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+
+  @media (max-width: 860px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const EvidenceCard = styled.article`
+  min-height: 154px;
+  display: grid;
+  align-content: start;
+  gap: 13px;
+  border: 1px solid rgba(221, 234, 245, 0.92);
+  border-radius: 16px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(247, 251, 255, 0.78)),
+    rgba(255, 255, 255, 0.84);
+  padding: 24px;
+  box-shadow: 0 12px 28px rgba(16, 24, 47, 0.055);
+  backdrop-filter: blur(12px);
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    border-color: rgba(186, 210, 236, 0.92);
+    box-shadow: 0 18px 38px rgba(16, 24, 47, 0.08);
+  }
+`;
+
+const EvidenceHead = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #59627f;
+  font-size: 13px;
+  font-weight: 850;
+`;
+
+const EvidenceIcon = styled.span`
+  width: 46px;
+  height: 46px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid rgba(221, 234, 245, 0.84);
+  border-radius: 14px;
+  color: ${({ $tone }) => $tone || '#1275ea'};
+  background:
+    radial-gradient(circle at 38% 22%, rgba(255, 255, 255, 0.9), transparent 48%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(232, 243, 255, 0.82));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.86);
+`;
+
+const EvidenceValue = styled.strong`
+  color: #11172f;
+  font-size: clamp(28px, 3vw, 36px);
+  line-height: 1.1;
+  letter-spacing: -0.045em;
+`;
+
+const EvidenceSub = styled.span`
+  color: #6b7890;
+  font-size: 13px;
+  font-weight: 760;
+`;
+
+const ChartCard = styled.section`
+  border: 1px solid rgba(221, 234, 245, 0.92);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 86% 18%, rgba(232, 243, 255, 0.62), transparent 28%),
+    rgba(255, 255, 255, 0.88);
+  padding: 26px;
+  box-shadow: 0 18px 40px rgba(28, 72, 120, 0.08);
+  backdrop-filter: blur(20px);
+`;
+
+const ChartHint = styled.div`
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  margin-bottom: 12px;
+  border-radius: 999px;
+  background: ${({ $tone }) => $tone?.accentSoft || '#e0f2ff'};
+  color: ${({ $tone }) => $tone?.text || '#1275ea'};
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 950;
+`;
+
+const MethodSection = styled.section`
+  display: grid;
+  grid-template-columns: minmax(240px, 0.34fr) minmax(0, 1fr);
+  gap: 28px;
+  border: 1px solid rgba(221, 234, 245, 0.92);
+  border-radius: 18px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.82), rgba(247, 251, 255, 0.66)),
+    rgba(255, 255, 255, 0.66);
+  padding: 32px;
+  box-shadow: 0 14px 38px rgba(45, 117, 210, 0.08);
+  backdrop-filter: blur(18px);
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const MethodIntro = styled.div`
+  h2 {
+    margin: 0;
+    color: #11172f;
+    font-size: 32px;
+    line-height: 1.14;
+    letter-spacing: -0.02em;
+  }
+
+  p {
+    margin: 12px 0 0;
+    color: #59627f;
+    line-height: 1.65;
+    font-weight: 760;
+  }
+`;
+
+const MethodGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+
+  @media (max-width: 1060px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @media (max-width: 620px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const MethodCard = styled.article`
+  border: 1px solid rgba(221, 234, 245, 0.9);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.82);
+  padding: 24px;
+  box-shadow: 0 10px 28px rgba(16, 24, 47, 0.05);
+
+  svg {
+    padding: 9px;
+    width: 42px;
+    height: 42px;
+    border-radius: 14px;
+    background: #f7fbff;
+    box-shadow: inset 0 0 0 1px rgba(221, 234, 245, 0.82);
+  }
+
+  strong {
+    display: block;
+    margin-top: 14px;
+    color: #11172f;
+    font-size: 17px;
+    line-height: 1.2;
+  }
+
+  p {
+    margin: 9px 0 0;
+    color: #59627f;
+    font-size: 14px;
+    line-height: 1.58;
+  }
+`;
+
 const defaultForm = {
-  route: '143',
+  route: '',
   station: '',
-  hour: String(new Date().getHours())
+  hour: String(new Date().getHours()),
+  month: ''
 };
 
 const stationGeoMap = {
@@ -569,12 +1577,41 @@ function getStationLabel(station) {
   return String(station || '').replace(/\(\d+\)/, '').trim();
 }
 
+function getMonthLabel(months, value) {
+  return months?.find((month) => String(month.value) === String(value))?.label || value || '월 선택';
+}
+
 function getTimePeriod(hour) {
   const numericHour = Number(hour);
   if (numericHour >= 5 && numericHour < 11) return 'morning';
   if (numericHour >= 11 && numericHour < 17) return 'day';
   if (numericHour >= 17 && numericHour < 21) return 'evening';
   return 'night';
+}
+
+function getCrowdingPercent(passengers) {
+  return Math.min(98, Math.max(6, Math.round(Number(passengers || 0) * 3.8)));
+}
+
+function getCrowdingLevelFromPercent(percent) {
+  if (percent <= 30) return '여유';
+  if (percent <= 60) return '보통';
+  if (percent <= 80) return '혼잡';
+  return '매우 혼잡';
+}
+
+function getResultHeadline(level) {
+  if (level === '여유') return '지금 타도 괜찮아요';
+  if (level === '보통') return '조금 붐빌 수 있어요';
+  if (level === '혼잡') return '지금은 다소 붐빌 수 있어요';
+  return '가능하면 피하는 게 좋아요';
+}
+
+function getResultDescription(level) {
+  if (level === '여유') return '현재 예상 혼잡도는 낮은 편이에요. 지금 탑승해도 비교적 여유로울 가능성이 높습니다.';
+  if (level === '보통') return '현재 예상 혼잡도는 보통 수준이에요. 좌석 여유는 제한적일 수 있어요.';
+  if (level === '혼잡') return '현재 예상 혼잡도가 높은 편이에요. 가능하면 추천 시간대를 확인해보세요.';
+  return '현재 예상 혼잡도가 매우 높아요. 가능하다면 다른 시간대 탑승을 추천합니다.';
 }
 
 function getStationVisual(station, hour) {
@@ -646,10 +1683,11 @@ function buildRecommendation({ row, hourly, route }) {
 
 function BusCrowdingPage() {
   const [form, setForm] = useState(defaultForm);
-  const [options, setOptions] = useState({ routes: [], stations: [], hours: [] });
+  const [options, setOptions] = useState({ routes: [], stations: [], months: [], defaultMonth: '', hours: [] });
   const [hourly, setHourly] = useState([]);
   const [loading, setLoading] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
   const [error, setError] = useState('');
 
   const peakHours = useMemo(
@@ -695,6 +1733,38 @@ function BusCrowdingPage() {
         text: form.station ? '현재 시간 기준으로 확인' : '정류장 선택 대기',
         sub: form.station ? '혼잡도 확인하기를 눌러 예측해보세요.' : '노선과 정류장을 먼저 골라주세요.'
       };
+  const selectedMonthLabel = useMemo(
+    () => getMonthLabel(options.months, form.month || options.defaultMonth),
+    [form.month, options.defaultMonth, options.months]
+  );
+  const resultPercent = result ? getCrowdingPercent(result.expectedPassengers) : 0;
+  const resultLevel = result ? getCrowdingLevelFromPercent(resultPercent) : '보통';
+  const resultTone = resultToneMap[resultLevel];
+  const averagePassengers = useMemo(
+    () => (hourly.length ? hourly.reduce((sum, item) => sum + Number(item.passengers || 0), 0) / hourly.length : 0),
+    [hourly]
+  );
+  const averageDiff = result && averagePassengers
+    ? Math.round(((averagePassengers - result.expectedPassengers) / averagePassengers) * 100)
+    : 0;
+  const normalizedAverageDiff = Math.min(99, Math.max(0, Math.abs(averageDiff)));
+  const averageDiffText = averageDiff > 0
+    ? `평균보다 ${normalizedAverageDiff}% 낮음`
+    : averageDiff < 0
+      ? `평균보다 ${normalizedAverageDiff}% 높음`
+      : '평균 수준';
+  const recommendedTime = result?.betterLater ? `${result.betterLater.hour}시 이후` : '지금 또는 10분 후';
+  const recommendedFromHour = result?.betterLater?.hour ? Number(result.betterLater.hour) : Number(form.hour) + 1;
+  const resultSummary = `${form.route}번 · ${getStationLabel(form.station)} · ${selectedMonthLabel} · ${form.hour}:00 기준`;
+  const chartData = useMemo(
+    () => hourly
+      .filter((item) => Number(item.hour) >= 5 && Number(item.hour) <= 23)
+      .map((item) => {
+        const percent = getCrowdingPercent(item.passengers);
+        return { ...item, percent, crowding: getCrowdingLevelFromPercent(percent) };
+      }),
+    [hourly]
+  );
 
   const runSearch = async (event, overrideForm) => {
     event?.preventDefault();
@@ -711,9 +1781,10 @@ function BusCrowdingPage() {
       const params = {
         route: searchForm.route.trim(),
         station: searchForm.station.trim(),
-        hour: searchForm.hour
+        hour: searchForm.hour,
+        month: searchForm.month || options.defaultMonth
       };
-      const hourlyData = await fetchHourly({ route: params.route, station: params.station, dayType: 'all' });
+      const hourlyData = await fetchHourly({ route: params.route, station: params.station, month: params.month, dayType: 'all' });
       setHourly(hourlyData);
       return true;
     } catch (requestError) {
@@ -730,6 +1801,12 @@ function BusCrowdingPage() {
   };
 
   useEffect(() => {
+    const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    const timer = window.setTimeout(() => setShowSplash(false), prefersReducedMotion ? 950 : 3100);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
     let ignore = false;
 
     async function initialize() {
@@ -737,22 +1814,19 @@ function BusCrowdingPage() {
         const data = await fetchOptions();
         if (ignore) return;
 
-        const firstRoute = data.routes?.includes(defaultForm.route) ? defaultForm.route : data.routes?.[0] || '';
-        const stationData = firstRoute ? await fetchStations(firstRoute) : { stations: [] };
-        if (ignore) return;
-
-        const firstStation = stationData.stations?.[0] || '';
+        const selectedMonth = data.defaultMonth || data.months?.at?.(-1)?.value || '';
         const nextForm = {
-          route: firstRoute,
-          station: firstStation,
-          hour: data.hours?.includes(new Date().getHours()) ? String(new Date().getHours()) : String(data.hours?.[0] || 8)
+          route: '',
+          station: '',
+          hour: data.hours?.includes(new Date().getHours()) ? String(new Date().getHours()) : String(data.hours?.[0] || 8),
+          month: ''
         };
 
-        setOptions({ ...data, stations: stationData.stations || [] });
+        setOptions({ ...data, stations: [] });
         setForm(nextForm);
       } catch (requestError) {
         if (!ignore) {
-          setOptions({ routes: [], stations: [], hours: [] });
+          setOptions({ routes: [], stations: [], months: [], defaultMonth: '', hours: [] });
           setError(requestError.response?.data?.error || requestError.message || '초기 데이터를 불러오지 못했습니다.');
         }
       }
@@ -777,7 +1851,7 @@ function BusCrowdingPage() {
 
     async function loadStationsForRoute() {
       try {
-        const stationData = await fetchStations(form.route);
+        const stationData = await fetchStations(form.route, form.month || options.defaultMonth);
         if (ignore) return;
         const stations = stationData.stations || [];
         setOptions((current) => ({ ...current, stations }));
@@ -794,197 +1868,212 @@ function BusCrowdingPage() {
     return () => {
       ignore = true;
     };
-  }, [form.route, options.routes]);
+  }, [form.month, form.route, options.defaultMonth, options.routes]);
 
   return (
     <Shell $background={stationVisual.background} $position={stationVisual.position} $tone={stationVisual.tone}>
-      {!hasStarted ? (
-        <IntroLayer>
-          <IntroCard>
-            <IntroMain>
-              <IntroEyebrow>
-                <MapPinned size={14} aria-hidden="true" />
-                서울시 공공데이터 기반
-              </IntroEyebrow>
-              <IntroTitle>지금 타도 괜찮을까요?</IntroTitle>
-              <IntroCopy>노선과 정류장을 고르면 현재 시간 기준 혼잡도를 바로 확인할 수 있어요.</IntroCopy>
-            </IntroMain>
-            <IntroPreview aria-hidden="true">
-              <PreviewMap>
-                <svg viewBox="0 0 320 220" preserveAspectRatio="none">
-                  <path
-                    d="M44 58 C81 32 126 44 159 61 C198 81 232 44 277 58 C301 66 311 98 291 124 C266 157 220 151 183 163 C139 177 84 162 48 132 C22 110 19 76 44 58 Z"
-                    fill="rgba(255,255,255,0.66)"
-                    stroke="rgba(151,164,194,0.42)"
-                    strokeWidth="1.4"
-                  />
-                  <path
-                    d="M2 137 C53 112 91 146 139 127 C184 109 217 105 261 124 C288 136 307 128 322 114"
-                    fill="none"
-                    stroke="rgba(127,200,255,0.72)"
-                    strokeWidth="15"
-                    strokeLinecap="round"
-                  />
-                  <path d="M66 48 L88 172 M137 54 L124 180 M209 48 L231 174" stroke="rgba(151,164,194,0.22)" />
-                  <circle cx="226" cy="121" r="10" fill="#2f8df4" stroke="white" strokeWidth="5" />
-                </svg>
-              </PreviewMap>
-              <PreviewContent>
-                <PreviewChip>
-                  <Route size={14} aria-hidden="true" />
-                  {form.route ? `${form.route}번` : '노선 선택'}
-                </PreviewChip>
-                <PreviewTitle>{introStationLabel}</PreviewTitle>
-                <PreviewResult>
-                  <PreviewResultMeta>{introPreviewStatus.meta}</PreviewResultMeta>
-                  <PreviewResultText>{introPreviewStatus.text}</PreviewResultText>
-                  <PreviewResultSub>{introPreviewStatus.sub}</PreviewResultSub>
-                </PreviewResult>
-              </PreviewContent>
-            </IntroPreview>
-            {error && <ErrorBox>{error}</ErrorBox>}
-            <IntroFormWrap>
-              <BusSearchBox
-                form={form}
-                setForm={setForm}
-                onSubmit={startExperience}
-                loading={loading}
-                options={options}
-                submitLabel="혼잡도 확인하기"
-                variant="flat"
-              />
-            </IntroFormWrap>
-          </IntroCard>
-        </IntroLayer>
-      ) : (
-      <Content>
-        <DashboardFrame>
-          <ControlDeck>
-            <LocationPlate>
-              <SeoulMap aria-hidden="true">
-                <svg viewBox="0 0 420 150" preserveAspectRatio="none">
-                  <path
-                    d="M58 28 C102 8 157 18 199 34 C251 54 300 16 358 28 C390 35 404 58 392 83 C379 112 330 125 281 119 C229 113 204 139 149 125 C92 111 44 96 34 68 C27 48 38 36 58 28 Z"
-                    fill="rgba(255,255,255,0.58)"
-                    stroke="rgba(151,164,194,0.42)"
-                    strokeWidth="1.4"
-                  />
-                  <path
-                    d="M14 91 C80 74 120 108 180 92 C236 77 279 69 335 82 C371 90 397 85 418 73"
-                    fill="none"
-                    stroke="rgba(127,200,255,0.72)"
-                    strokeWidth="12"
-                    strokeLinecap="round"
-                  />
-                  <path
-                    d="M14 91 C80 74 120 108 180 92 C236 77 279 69 335 82 C371 90 397 85 418 73"
-                    fill="none"
-                    stroke="rgba(255,255,255,0.72)"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                  <path d="M94 24 L128 124 M174 34 L153 128 M241 30 L268 121 M325 29 L301 122" stroke="rgba(151,164,194,0.22)" strokeWidth="1" />
-                  <path d="M44 60 L376 46 M40 112 L366 105" stroke="rgba(151,164,194,0.2)" strokeWidth="1" />
-                  <text x="38" y="37" fill="rgba(70,75,101,0.38)" fontSize="12" fontWeight="800">SEOUL</text>
-                  <text x="292" y="77" fill="rgba(40,120,216,0.42)" fontSize="10" fontWeight="800">HAN RIVER</text>
-                </svg>
-              </SeoulMap>
-              <MapMarker $x={stationMapPosition.x} $y={stationMapPosition.y} />
-              <LocationContent>
-                <StationMeta>
-                  <MetaChip>
-                    <MapPinned size={14} aria-hidden="true" />
-                    {form.station || '정류장 선택'}
-                  </MetaChip>
-                  <MetaChip>
-                    <Navigation size={14} aria-hidden="true" />
-                    {form.route}번 · {form.hour}시
-                  </MetaChip>
-                </StationMeta>
-                <StationTitle>{form.station || '정류장'}</StationTitle>
-              </LocationContent>
-            </LocationPlate>
-            <SearchPlate>
-              <BusSearchBox form={form} setForm={setForm} onSubmit={runSearch} loading={loading} options={options} variant="flat" />
-            </SearchPlate>
-          </ControlDeck>
-
-          {error && <ErrorBox>{error}</ErrorBox>}
-
-          <ExploreGrid>
-            <CrowdingResult
-              result={result}
-              quietHours={quietHours}
-              peakHours={peakHours}
-              selectedHour={Number(form.hour)}
-              onSelectHour={(hour) => setForm((current) => ({ ...current, hour: String(hour) }))}
-            />
-
-            <TimeExplorePanel>
-              <TimelineHeader>
-                <div>
-                  <SectionTitle>시간대별 혼잡도 추이</SectionTitle>
-                  <RhythmNote>슬라이더를 움직이거나 막대를 눌러 추천 기준을 바꿔보세요.</RhythmNote>
-                </div>
-                <SelectedTime>{form.hour}:00</SelectedTime>
-              </TimelineHeader>
-              <Slider
-                min="0"
-                max="23"
-                step="1"
-                value={form.hour}
-                aria-label="탑승 시간 선택"
-                onChange={(event) => setForm((current) => ({ ...current, hour: event.target.value }))}
-              />
-              <CrowdingChart
-                data={hourly}
-                selectedHour={Number(form.hour)}
-                onSelectHour={(hour) => setForm((current) => ({ ...current, hour: String(hour) }))}
-                embedded
-              />
-            </TimeExplorePanel>
-          </ExploreGrid>
-
-          <RhythmPanel>
-            <RhythmHeader>
-              <div>
-                <SectionTitle>하루 시간대별 패턴</SectionTitle>
-                <RhythmNote>색과 높이로 하루 전체 혼잡 흐름을 압축해서 보여줍니다.</RhythmNote>
-              </div>
-            </RhythmHeader>
-            <RhythmScroll>
-              <TimeStrip>
-                {Array.from({ length: 24 }, (_, hour) => {
-                  const cell = hourly.find((item) => Number(item.hour) === hour);
-                  const active = Number(form.hour) === hour;
-                  const height = cell ? Math.max(12, Math.round((cell.passengers / maxPassengers) * 100)) : 0;
-
-                  return (
-                    <TimeStripButton
-                      key={hour}
-                      type="button"
-                      title={cell ? `${hour}시 / 예상 ${cell.passengers}명 / ${cell.crowding}` : `${hour}시 데이터 없음`}
-                      $active={active}
-                      $clickable={Boolean(cell)}
-                      disabled={!cell}
-                      onClick={() => {
-                        if (!cell) return;
-                        setForm((current) => ({ ...current, hour: String(hour) }));
-                      }}
-                    >
-                      <DensityTrack>
-                        <DensityFill $height={height} $level={cell?.crowding} />
-                      </DensityTrack>
-                      <HourLabel>{hour}</HourLabel>
-                    </TimeStripButton>
-                  );
-                })}
-              </TimeStrip>
-            </RhythmScroll>
-          </RhythmPanel>
-        </DashboardFrame>
-      </Content>
+      {showSplash && (
+        <SplashOverlay role="presentation">
+          <SplashSkip type="button" onClick={() => setShowSplash(false)}>
+            건너뛰기
+          </SplashSkip>
+          <SplashScene aria-hidden="true">
+            <SplashRoad>
+              <span />
+              <span />
+              <span />
+            </SplashRoad>
+            <SplashBusStage>
+              <BusImageWrapper>
+                <img src="/assets/bus-3d.png" alt="3D bus" />
+              </BusImageWrapper>
+            </SplashBusStage>
+            <SplashLogo>
+              <SplashBrand>타도될까</SplashBrand>
+              <SplashTagline>서울 버스 혼잡도 예측</SplashTagline>
+            </SplashLogo>
+          </SplashScene>
+        </SplashOverlay>
       )}
+      <PageWrap>
+        <SiteHeader>
+          <BrandGroup>
+            <BrandLogo>타도될까</BrandLogo>
+            <BrandMeta>서울시 공공데이터 기반</BrandMeta>
+          </BrandGroup>
+          <HeaderNav aria-label="주요 메뉴">
+            <a href="#project">프로젝트 소개</a>
+            <a href="#method">예측 방식</a>
+            <a href="#example">결과 예시</a>
+          </HeaderNav>
+        </SiteHeader>
+
+        {!hasStarted ? (
+          <>
+            <SearchHero>
+              <HeroText>
+                <HeroTitle>지금 타도 괜찮을까요?</HeroTitle>
+                <HeroCopy>노선과 정류장을 선택하면 현재 시간 기준 예상 혼잡도를 확인할 수 있어요.</HeroCopy>
+                {error && <ErrorBox>{error}</ErrorBox>}
+                <SearchCard>
+                  <BusSearchBox
+                    form={form}
+                    setForm={setForm}
+                    onSubmit={startExperience}
+                    loading={loading}
+                    options={options}
+                    showMonth
+                    submitLabel="혼잡도 확인하기"
+                    variant="flat"
+                  />
+                </SearchCard>
+              </HeroText>
+
+              <HeroVisual aria-hidden="true">
+                <RouteBackdrop>
+                  <svg viewBox="0 0 640 460" preserveAspectRatio="none">
+                    <path d="M31 278 C112 214 183 245 253 210 C331 171 411 174 495 124 C555 88 598 107 626 145" fill="none" stroke="rgba(123, 181, 245, 0.28)" strokeWidth="8" strokeLinecap="round" />
+                    <path d="M21 316 C99 286 152 323 232 294 C325 261 399 274 492 234 C555 207 602 220 638 246" fill="none" stroke="rgba(123, 181, 245, 0.2)" strokeWidth="4" strokeLinecap="round" />
+                    <path d="M83 152 C174 80 251 96 321 132 C394 170 470 88 572 120" fill="none" stroke="rgba(156, 170, 199, 0.18)" strokeWidth="3" strokeLinecap="round" />
+                    <circle cx="116" cy="245" r="12" fill="rgba(47, 141, 244, 0.18)" stroke="rgba(47, 141, 244, 0.34)" strokeWidth="5" />
+                    <circle cx="349" cy="179" r="8" fill="#ffffff" stroke="rgba(47, 141, 244, 0.34)" strokeWidth="5" />
+                    <circle cx="515" cy="123" r="16" fill="rgba(255,255,255,0.74)" stroke="rgba(47, 141, 244, 0.18)" strokeWidth="6" />
+                    <path d="M515 141 L515 186" stroke="rgba(47, 141, 244, 0.2)" strokeWidth="5" strokeLinecap="round" />
+                  </svg>
+                </RouteBackdrop>
+                <HeroRoad>
+                  <span />
+                  <span />
+                  <span />
+                </HeroRoad>
+                <BusHeroImage src="/assets/bus-3d.png" alt="" />
+              </HeroVisual>
+            </SearchHero>
+
+            <FeatureGrid id="project">
+              <FeatureCard>
+                <FeatureIcon><Clock3 size={24} aria-hidden="true" /></FeatureIcon>
+                <div>
+                  <FeatureTitle>빠른 확인</FeatureTitle>
+                  <FeatureText>현재 시간 기준 예측</FeatureText>
+                </div>
+              </FeatureCard>
+              <FeatureCard>
+                <FeatureIcon><Database size={24} aria-hidden="true" /></FeatureIcon>
+                <div>
+                  <FeatureTitle>데이터 기반</FeatureTitle>
+                  <FeatureText>서울시 공공데이터 활용</FeatureText>
+                </div>
+              </FeatureCard>
+              <FeatureCard>
+                <FeatureIcon><Gauge size={24} aria-hidden="true" /></FeatureIcon>
+                <div>
+                  <FeatureTitle>직관적 판단</FeatureTitle>
+                  <FeatureText>여유 · 보통 · 혼잡으로 안내</FeatureText>
+                </div>
+              </FeatureCard>
+            </FeatureGrid>
+          </>
+        ) : (
+          <ResultPage>
+            <SummaryBar>
+              <SummaryText>{resultSummary}</SummaryText>
+              <SecondaryButton type="button" onClick={() => setHasStarted(false)}>
+                <RotateCcw size={16} aria-hidden="true" />
+                조건 수정하기
+              </SecondaryButton>
+            </SummaryBar>
+
+            {error && <ErrorBox>{error}</ErrorBox>}
+
+            <ResultHeroCard id="example" $tone={resultTone}>
+              <div>
+                <ResultEyebrow $tone={resultTone}>현재 시간 기준 판단</ResultEyebrow>
+                <ResultHeadline $tone={resultTone}>{getResultHeadline(resultLevel)}</ResultHeadline>
+                <PercentLine>
+                  <PercentValue $tone={resultTone}>{resultPercent}%</PercentValue>
+                  <GradeBadge $tone={resultTone}>
+                    <Smile size={18} aria-hidden="true" />
+                    {resultLevel}
+                  </GradeBadge>
+                </PercentLine>
+                <ResultDescription>{getResultDescription(resultLevel)}</ResultDescription>
+              </div>
+              <ResultSideStat aria-label={`예상 혼잡도 ${resultPercent}%`}>
+                <GaugeLabel>예상 혼잡도</GaugeLabel>
+                <GaugeCircle $percent={resultPercent} $tone={resultTone}>{resultPercent}%</GaugeCircle>
+                <GaugeCaption $tone={resultTone}>{resultTone.caption}</GaugeCaption>
+              </ResultSideStat>
+            </ResultHeroCard>
+
+            <EvidenceGrid>
+              <EvidenceCard>
+                <EvidenceHead>
+                  <EvidenceIcon $tone={resultTone.text}><Users size={22} aria-hidden="true" /></EvidenceIcon>
+                  예상 승차 인원
+                </EvidenceHead>
+                <EvidenceValue>{result?.expectedPassengers ?? 0}명</EvidenceValue>
+                <EvidenceSub>현재 시간 기준 예상 인원</EvidenceSub>
+              </EvidenceCard>
+              <EvidenceCard>
+                <EvidenceHead>
+                  <EvidenceIcon $tone="#00a884"><TrendingDown size={22} aria-hidden="true" /></EvidenceIcon>
+                  평균 대비
+                </EvidenceHead>
+                <EvidenceValue>{averageDiffText}</EvidenceValue>
+                <EvidenceSub>하루 평균 승차 패턴 기준</EvidenceSub>
+              </EvidenceCard>
+              <EvidenceCard>
+                <EvidenceHead>
+                  <EvidenceIcon $tone="#4ba3f2"><Clock3 size={22} aria-hidden="true" /></EvidenceIcon>
+                  추천 시간대
+                </EvidenceHead>
+                <EvidenceValue>{recommendedTime}</EvidenceValue>
+                <EvidenceSub>혼잡도가 내려가는 다음 구간</EvidenceSub>
+              </EvidenceCard>
+            </EvidenceGrid>
+
+            <ChartCard>
+              <ChartHint $tone={resultTone}>추천 구간: {recommendedTime}</ChartHint>
+              <CrowdingChart
+                data={chartData}
+                selectedHour={Number(form.hour)}
+                recommendedFromHour={recommendedFromHour}
+                onSelectHour={(hour) => setForm((current) => ({ ...current, hour: String(hour) }))}
+              />
+            </ChartCard>
+
+            <MethodSection id="method">
+              <MethodIntro>
+                <h2>어떻게 예측했나요?</h2>
+                <p>데이터와 알고리즘으로 더 정확한 버스 혼잡도를 예측합니다.</p>
+              </MethodIntro>
+              <MethodGrid>
+                <MethodCard>
+                  <Target size={24} color="#1275ea" aria-hidden="true" />
+                  <strong>문제 정의</strong>
+                  <p>탑승 전 혼잡도를 몰라 생기는 불편을 줄입니다.</p>
+                </MethodCard>
+                <MethodCard>
+                  <Database size={24} color="#12a46f" aria-hidden="true" />
+                  <strong>사용 데이터</strong>
+                  <p>서울시 승하차, 노선, 정류장 데이터를 활용합니다.</p>
+                </MethodCard>
+                <MethodCard>
+                  <BarChart3 size={24} color="#7b6cf6" aria-hidden="true" />
+                  <strong>혼잡도 계산</strong>
+                  <p>시간대별 패턴으로 혼잡도 등급을 산출합니다.</p>
+                </MethodCard>
+                <MethodCard>
+                  <Heart size={24} color="#e65091" aria-hidden="true" />
+                  <strong>사용자 가치</strong>
+                  <p>더 쾌적한 탑승 시간을 고를 수 있게 돕습니다.</p>
+                </MethodCard>
+              </MethodGrid>
+            </MethodSection>
+          </ResultPage>
+        )}
+      </PageWrap>
     </Shell>
   );
 }

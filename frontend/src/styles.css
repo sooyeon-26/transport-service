@@ -1,3 +1,30 @@
+@import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Do+Hyeon&family=Gasoek+One&display=swap');
+
+:root {
+  --bg-page: #eaf5fc;
+  --bg-card: #ffffff;
+  --bg-card-soft: #f7fbff;
+  --text-main: #10182f;
+  --text-sub: #5d6b82;
+  --text-muted: #8492a6;
+  --primary-blue: #2f80ed;
+  --primary-blue-soft: #e8f3ff;
+  --safe-main: #00a884;
+  --safe-dark: #007a63;
+  --safe-soft: #e8f8f3;
+  --normal-main: #4ba3f2;
+  --normal-soft: #e8f3ff;
+  --warning-main: #ff9f43;
+  --warning-dark: #c66a16;
+  --warning-soft: #fff3e4;
+  --danger-main: #ff6b6b;
+  --danger-dark: #d94848;
+  --danger-soft: #ffecec;
+  --border-soft: #ddeaf5;
+  --shadow-soft: 0 18px 40px rgba(28, 72, 120, 0.08);
+  --shadow-card: 0 10px 28px rgba(16, 24, 47, 0.06);
+}
+
 * {
   box-sizing: border-box;
 }

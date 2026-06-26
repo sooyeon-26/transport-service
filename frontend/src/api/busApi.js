@@ -12,7 +12,7 @@ export async function fetchOptions() {
   return data;
 }
 
-export async function fetchStations(route) {
-  const { data } = await axios.get(`${API_BASE_URL}/stations`, { params: { route } });
+export async function fetchStations(route, month) {
+  const { data } = await axios.get(`${API_BASE_URL}/stations`, { params: { route, month } });
   return data;
 }

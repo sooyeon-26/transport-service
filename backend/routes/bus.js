@@ -33,10 +33,13 @@ function getCache() {
     const payload = JSON.parse(fs.readFileSync(API_CACHE_PATH, 'utf-8'));
     const byKey = new Map();
     const byRouteStationDay = new Map();
+    const defaultMonth = payload.defaultMonth || payload.months?.at?.(-1)?.value || 'default';
 
     for (const [groupKey, points] of Object.entries(payload.series)) {
-      const [route, station, dayType] = groupKey.split('|||');
+      const parts = groupKey.split('|||');
+      const [month, route, station, dayType] = parts.length === 4 ? parts : [defaultMonth, ...parts];
       const rows = points.map(([hour, passengers, alightPassengers, crowding]) => ({
+        month,
         route,
         station,
         dayType,
@@ -45,17 +48,21 @@ function getCache() {
         alightPassengers,
         crowding
       }));
-      byRouteStationDay.set(groupKey, rows);
+      const normalizedGroupKey = `${month}|||${route}|||${station}|||${dayType}`;
+      byRouteStationDay.set(normalizedGroupKey, rows);
       for (const row of rows) {
-        byKey.set(`${groupKey}|||${row.hour}`, row);
+        byKey.set(`${normalizedGroupKey}|||${row.hour}`, row);
       }
     }
 
     cache = {
       byRouteStationDay,
       byKey,
+      months: payload.months || [],
+      defaultMonth,
       routes: payload.routes,
       routeStations: payload.routeStations,
+      monthRouteStations: payload.monthRouteStations || {},
       dayTypes: payload.dayTypes,
       hours: payload.hours
     };
@@ -63,17 +70,26 @@ function getCache() {
   return cache;
 }
 
-function findRows(route, station, dayType) {
+function resolveMonth(month) {
   const data = getCache();
+  const monthValue = String(month || data.defaultMonth || '');
+  const knownMonths = new Set((data.months || []).map((item) => String(item.value)));
+  if (!knownMonths.size || knownMonths.has(monthValue)) return monthValue;
+  return data.defaultMonth || monthValue;
+}
+
+function findRows(month, route, station, dayType) {
+  const data = getCache();
+  const selectedMonth = resolveMonth(month);
   return (
-    data.byRouteStationDay.get(`${route}|||${station}|||${dayType}`) ||
-    data.byRouteStationDay.get(`${route}|||${station}|||all`) ||
+    data.byRouteStationDay.get(`${selectedMonth}|||${route}|||${station}|||${dayType}`) ||
+    data.byRouteStationDay.get(`${selectedMonth}|||${route}|||${station}|||all`) ||
     []
   );
 }
 
 router.get('/predict', async (req, res) => {
-  const { route, station, hour, dayType = 'all' } = req.query;
+  const { route, station, hour, dayType = 'all', month } = req.query;
 
   if (!route || !station || hour === undefined) {
     res.status(400).json({ error: 'route, station, hour는 필수입니다.' });
@@ -82,14 +98,16 @@ router.get('/predict', async (req, res) => {
 
   try {
     const data = getCache();
-    const key = `${String(route)}|||${String(station)}|||${String(dayType)}|||${Number(hour)}`;
-    const fallbackKey = `${String(route)}|||${String(station)}|||all|||${Number(hour)}`;
+    const selectedMonth = resolveMonth(month);
+    const key = `${selectedMonth}|||${String(route)}|||${String(station)}|||${String(dayType)}|||${Number(hour)}`;
+    const fallbackKey = `${selectedMonth}|||${String(route)}|||${String(station)}|||all|||${Number(hour)}`;
     const row = data.byKey.get(key) || data.byKey.get(fallbackKey);
     const expectedPassengers = row?.passengers || 0;
     const predictedCrowding = labelCrowding(expectedPassengers);
     res.json({
       route: String(route),
       station: String(station),
+      month: selectedMonth,
       hour: Number(hour),
       dayType: String(dayType),
       predictedCrowding,
@@ -102,7 +120,7 @@ router.get('/predict', async (req, res) => {
 });
 
 router.get('/hourly', async (req, res) => {
-  const { route, station, dayType = 'all' } = req.query;
+  const { route, station, dayType = 'all', month } = req.query;
 
   if (!route || !station) {
     res.status(400).json({ error: 'route, station은 필수입니다.' });
@@ -110,7 +128,7 @@ router.get('/hourly', async (req, res) => {
   }
 
   try {
-    const rows = findRows(String(route), String(station), String(dayType))
+    const rows = findRows(month, String(route), String(station), String(dayType))
       .sort((a, b) => a.hour - b.hour)
       .map((row) => ({ hour: row.hour, passengers: row.passengers, crowding: row.crowding }));
     res.json(rows);
@@ -123,14 +141,14 @@ router.get('/options', async (_req, res) => {
   try {
     const data = getCache();
     const dayTypes = Array.from(new Set([...(data.dayTypes || []), ...FALLBACK_DAY_TYPES]));
-    res.json({ routes: data.routes, dayTypes, hours: data.hours });
+    res.json({ routes: data.routes, months: data.months, defaultMonth: data.defaultMonth, dayTypes, hours: data.hours });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
 router.get('/stations', async (req, res) => {
-  const { route } = req.query;
+  const { route, month } = req.query;
   if (!route) {
     res.status(400).json({ error: 'route는 필수입니다.' });
     return;
@@ -138,7 +156,9 @@ router.get('/stations', async (req, res) => {
 
   try {
     const data = getCache();
-    res.json({ route: String(route), stations: data.routeStations[String(route)] || [] });
+    const selectedMonth = resolveMonth(month);
+    const monthlyStations = data.monthRouteStations?.[selectedMonth]?.[String(route)];
+    res.json({ route: String(route), month: selectedMonth, stations: monthlyStations || data.routeStations[String(route)] || [] });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
