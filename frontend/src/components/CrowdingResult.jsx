@@ -3,17 +3,17 @@ import styled from 'styled-components';
 import { AlertTriangle, CheckCircle2, Clock3, Route, Sparkles } from 'lucide-react';
 
 const crowdingColor = {
-  여유: '#bff3de',
-  보통: '#dff1ff',
-  혼잡: '#ffe0c4',
-  '매우 혼잡': '#ffd7d7'
+  여유: '#e8f8f3',
+  보통: '#e8f3ff',
+  혼잡: '#fff3e4',
+  '매우 혼잡': '#ffecec'
 };
 
 const crowdingTextColor = {
-  여유: '#22644f',
-  보통: '#2878d8',
-  혼잡: '#9a5721',
-  '매우 혼잡': '#b83232'
+  여유: '#00a884',
+  보통: '#4ba3f2',
+  혼잡: '#ff9f43',
+  '매우 혼잡': '#ff6b6b'
 };
 
 const crowdingHeadline = {

@@ -14,10 +14,10 @@ import {
 } from 'recharts';
 
 const COLORS = {
-  여유: '#9be8d7',
-  보통: '#a9d8ff',
-  혼잡: '#ffc680',
-  '매우 혼잡': '#ff9b9b'
+  여유: '#00a884',
+  보통: '#4ba3f2',
+  혼잡: '#ff9f43',
+  '매우 혼잡': '#ff6b6b'
 };
 
 const SELECTED_COLORS = {
@@ -91,8 +91,8 @@ const Header = styled.div`
 const ChartCallouts = styled.div`
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin: -2px 0 14px;
+  gap: 10px;
+  margin: 2px 0 18px;
 `;
 
 const CalloutPill = styled.span`
@@ -103,14 +103,14 @@ const CalloutPill = styled.span`
   border-radius: 999px;
   background: ${({ $soft }) => $soft || 'rgba(247, 251, 255, 0.86)'};
   color: ${({ $color }) => $color || '#5d6b82'};
-  padding: 7px 10px;
-  font-size: 12px;
-  font-weight: 850;
+  padding: 8px 11px;
+  font-size: 13px;
+  font-weight: 900;
 
   &::before {
     content: '';
-    width: 7px;
-    height: 7px;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
     background: ${({ $color }) => $color || '#4ba3f2'};
   }
@@ -161,7 +161,7 @@ const Empty = styled.div`
   border-radius: 8px;
 `;
 
-function CrowdingChart({ data, selectedHour, recommendedFromHour, onSelectHour, embedded = false }) {
+function CrowdingChart({ data, selectedHour, recommendedFromHour, onSelectHour, embedded = false, showHeader = true }) {
   const selectedEntry = data.find((entry) => Number(entry.hour) === Number(selectedHour));
   const selectedColor = SELECTED_COLORS[selectedEntry?.crowding] || '#4ba3f2';
   const peakEntry = data.reduce(
@@ -171,7 +171,7 @@ function CrowdingChart({ data, selectedHour, recommendedFromHour, onSelectHour, 
 
   return (
     <Panel $embedded={embedded}>
-      {!embedded && (
+      {!embedded && showHeader && (
         <Header>
           <div>
             <Title>시간대별 혼잡도</Title>
@@ -204,8 +204,8 @@ function CrowdingChart({ data, selectedHour, recommendedFromHour, onSelectHour, 
         </ChartCallouts>
       ) : null}
       {data.length ? (
-        <ResponsiveContainer width="100%" height={260}>
-          <BarChart data={data} margin={{ top: 42, right: 10, bottom: 0, left: -18 }}>
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={data} margin={{ top: 44, right: 12, bottom: 10, left: -8 }} barCategoryGap="18%">
             <defs>
               <filter id="selectedBarShadow" x="-30%" y="-30%" width="160%" height="170%">
                 <feDropShadow dx="0" dy="8" stdDeviation="6" floodColor="#1c4878" floodOpacity="0.18" />
@@ -222,9 +222,21 @@ function CrowdingChart({ data, selectedHour, recommendedFromHour, onSelectHour, 
                 strokeOpacity={0}
               />
             ) : null}
-            <CartesianGrid stroke="rgba(196, 211, 236, 0.72)" vertical={false} strokeDasharray="4 4" />
-            <XAxis dataKey="hour" tickFormatter={(value) => `${value}시`} tick={{ fill: '#69718d', fontSize: 12 }} />
-            <YAxis domain={[0, 100]} tickFormatter={(value) => `${value}`} tick={{ fill: '#69718d', fontSize: 12 }} />
+            <CartesianGrid stroke="rgba(196, 211, 236, 0.7)" vertical={false} strokeDasharray="4 4" />
+            <XAxis
+              dataKey="hour"
+              interval={0}
+              tickFormatter={(value) => `${value}시`}
+              tick={{ fill: '#69718d', fontSize: 11, fontWeight: 800 }}
+              tickMargin={8}
+            />
+            <YAxis
+              domain={[0, 100]}
+              tickFormatter={(value) => `${value}`}
+              tick={{ fill: '#69718d', fontSize: 12, fontWeight: 800 }}
+              axisLine={false}
+              tickLine={false}
+            />
             <Tooltip
               formatter={(value, _name, props) => [`${value}%`, props.payload.crowding]}
               labelFormatter={(label) => `${label}시`}
@@ -232,7 +244,8 @@ function CrowdingChart({ data, selectedHour, recommendedFromHour, onSelectHour, 
             />
             <Bar
               dataKey="percent"
-              radius={[6, 6, 0, 0]}
+              radius={[8, 8, 3, 3]}
+              maxBarSize={34}
               cursor="pointer"
               onClick={(entry) => onSelectHour?.(entry.hour)}
             >
@@ -245,10 +258,10 @@ function CrowdingChart({ data, selectedHour, recommendedFromHour, onSelectHour, 
                   <Cell
                     key={entry.hour}
                     fill={selected ? SELECTED_COLORS[entry.crowding] || '#2f8df4' : COLORS[entry.crowding] || '#8fd8ff'}
-                    opacity={selected ? 1 : recommended ? 0.9 : 0.56}
-                    stroke={recommended && !selected ? SELECTED_COLORS[entry.crowding] || '#4ba3f2' : undefined}
-                    strokeWidth={recommended && !selected ? 1 : 0}
-                    strokeOpacity={recommended && !selected ? 0.32 : undefined}
+                    opacity={selected ? 1 : recommended ? 0.92 : 0.68}
+                    stroke={selected ? '#ffffff' : recommended ? SELECTED_COLORS[entry.crowding] || '#4ba3f2' : undefined}
+                    strokeWidth={selected ? 2 : recommended ? 1 : 0}
+                    strokeOpacity={selected ? 0.95 : recommended ? 0.36 : undefined}
                     filter={selected ? 'url(#selectedBarShadow)' : undefined}
                   />
                 );

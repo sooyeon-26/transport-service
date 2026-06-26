@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import styled, { keyframes } from 'styled-components';
-import { BarChart3, Clock3, Database, Gauge, Heart, RotateCcw, Smile, Target, TrendingDown, Users } from 'lucide-react';
+import { BarChart3, BusFront, CalendarDays, Clock3, Database, Gauge, Heart, MapPin, RotateCcw, Smile, Target, TrendingDown, Users } from 'lucide-react';
 import { fetchHourly, fetchOptions, fetchStations } from '../api/busApi.js';
 import BusSearchBox from '../components/BusSearchBox.jsx';
 import CrowdingChart from '../components/CrowdingChart.jsx';
@@ -289,6 +289,12 @@ const Content = styled.div`
   @media (max-width: 720px) {
     padding: 12px;
   }
+`;
+
+const SectionAnchor = styled.span`
+  display: block;
+  height: 1px;
+  scroll-margin-top: 88px;
 `;
 
 const IntroLayer = styled.div`
@@ -767,10 +773,10 @@ const DensityFill = styled.span`
   height: ${({ $height }) => $height}%;
   border-radius: 999px;
   background: ${({ $level }) => {
-    if ($level === '매우 혼잡') return '#7b6cf6';
-    if ($level === '혼잡') return '#ffae73';
-    if ($level === '보통') return '#7fc8ff';
-    if ($level === '여유') return '#bff3de';
+    if ($level === '매우 혼잡') return '#ff6b6b';
+    if ($level === '혼잡') return '#ff9f43';
+    if ($level === '보통') return '#4ba3f2';
+    if ($level === '여유') return '#00a884';
     return '#dae0f1';
   }};
 `;
@@ -835,6 +841,19 @@ const resultToneMap = {
     caption: '혼잡도가 높은 구간'
   }
 };
+
+const crowdingRules = [
+  { label: '여유', color: '#00a884', range: '0~30%' },
+  { label: '보통', color: '#4ba3f2', range: '31~60%' },
+  { label: '혼잡', color: '#ff9f43', range: '61~80%' },
+  { label: '매우 혼잡', color: '#ff6b6b', range: '81%+' }
+];
+
+const popularRoutes = [
+  { route: '1218', station: '남대문중학교', note: '등하교·출퇴근' },
+  { route: '160', station: '강남역', note: '도심 이동' },
+  { route: '740', station: '홍대입구', note: '저녁 피크' }
+];
 
 const PageWrap = styled.div`
   width: min(1348px, calc(100% - 96px));
@@ -919,12 +938,12 @@ const HeaderNav = styled.nav`
 
 const SearchHero = styled.section`
   position: relative;
-  min-height: 620px;
+  min-height: 560px;
   display: grid;
   grid-template-columns: minmax(680px, 0.96fr) minmax(500px, 1fr);
   gap: 26px;
   align-items: center;
-  padding: 72px 38px 28px;
+  padding: 54px 38px 18px;
   overflow: hidden;
 
   &::before {
@@ -973,9 +992,34 @@ const HeroTitle = styled.h1`
   }
 `;
 
+const HeroBadgeRow = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-bottom: 18px;
+`;
+
+const HeroBadge = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid rgba(187, 214, 242, 0.88);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  color: #1f72d8;
+  padding: 9px 12px;
+  font-size: 13px;
+  font-weight: 950;
+  box-shadow: 0 10px 24px rgba(45, 117, 210, 0.08);
+
+  svg {
+    flex: 0 0 auto;
+  }
+`;
+
 const HeroCopy = styled.p`
   max-width: 600px;
-  margin: 22px 0 0;
+  margin: 18px 0 0;
   color: #34405f;
   font-size: clamp(17px, 1.6vw, 22px);
   line-height: 1.72;
@@ -984,11 +1028,11 @@ const HeroCopy = styled.p`
 const SearchCard = styled.div`
   position: relative;
   z-index: 10;
-  margin-top: 30px;
+  margin-top: 26px;
   border: 1px solid rgba(255, 255, 255, 0.78);
   border-radius: 24px;
   background: rgba(255, 255, 255, 0.9);
-  padding: 26px;
+  padding: 24px;
   box-shadow: 0 24px 80px rgba(76, 112, 170, 0.18);
   backdrop-filter: blur(22px);
 `;
@@ -1080,11 +1124,11 @@ const FeatureGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0;
-  margin-top: 22px;
+  margin-top: 10px;
   border: 1px solid rgba(255, 255, 255, 0.82);
   border-radius: 28px;
   background: rgba(255, 255, 255, 0.9);
-  padding: 34px 46px;
+  padding: 28px 38px;
   box-shadow: 0 24px 80px rgba(76, 112, 170, 0.14);
   backdrop-filter: blur(22px);
 
@@ -1096,26 +1140,35 @@ const FeatureGrid = styled.div`
 `;
 
 const FeatureCard = styled.article`
-  min-height: 122px;
+  min-height: 112px;
   display: grid;
-  grid-template-columns: 46px 1fr;
+  grid-template-columns: 76px 1fr;
   gap: 14px;
   align-items: center;
   border: 0;
   border-radius: 0;
   background: transparent;
-  padding: 0 34px;
+  padding: 0 26px;
   box-shadow: none;
   backdrop-filter: none;
 
   & + & {
     border-left: 1px solid rgba(194, 211, 236, 0.78);
   }
+
+  @media (max-width: 840px) {
+    padding: 22px 28px;
+
+    & + & {
+      border-left: 0;
+      border-top: 1px solid rgba(194, 211, 236, 0.78);
+    }
+  }
 `;
 
 const FeatureIcon = styled.span`
-  width: 88px;
-  height: 88px;
+  width: 70px;
+  height: 70px;
   display: inline-grid;
   place-items: center;
   border-radius: 22px;
@@ -1126,7 +1179,7 @@ const FeatureIcon = styled.span`
 const FeatureTitle = styled.strong`
   display: block;
   color: #11172f;
-  font-size: 22px;
+  font-size: 21px;
 `;
 
 const FeatureText = styled.span`
@@ -1135,6 +1188,242 @@ const FeatureText = styled.span`
   color: #59627f;
   font-size: 16px;
   font-weight: 750;
+`;
+
+const HomeStoryGrid = styled.section`
+  display: grid;
+  grid-template-columns: minmax(0, 1.06fr) minmax(330px, 0.7fr);
+  gap: 16px;
+  margin-top: 16px;
+
+  @media (max-width: 960px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const StoryPanel = styled.article`
+  border: 1px solid rgba(221, 234, 245, 0.92);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 86% 14%, rgba(232, 243, 255, 0.78), transparent 28%),
+    rgba(255, 255, 255, 0.88);
+  padding: 24px;
+  box-shadow: 0 16px 38px rgba(45, 117, 210, 0.1);
+  backdrop-filter: blur(18px);
+
+  h2 {
+    margin: 0;
+    color: #11172f;
+    font-size: clamp(24px, 2.4vw, 34px);
+    line-height: 1.18;
+    letter-spacing: 0;
+  }
+
+  p {
+    margin: 10px 0 0;
+    color: #59627f;
+    line-height: 1.62;
+    font-weight: 760;
+  }
+`;
+
+const StepList = styled.div`
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 18px;
+
+  @media (max-width: 720px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const StepCard = styled.div`
+  min-height: 112px;
+  border: 1px solid rgba(221, 234, 245, 0.88);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.74);
+  padding: 16px;
+
+  strong {
+    display: block;
+    color: #11172f;
+    font-size: 17px;
+  }
+
+  span {
+    display: block;
+    margin-top: 8px;
+    color: #59627f;
+    font-size: 14px;
+    line-height: 1.5;
+    font-weight: 760;
+  }
+`;
+
+const RoutePanel = styled(StoryPanel)`
+  display: grid;
+  align-content: start;
+`;
+
+const RouteList = styled.div`
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+`;
+
+const RouteItem = styled.button`
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px 12px;
+  min-height: 64px;
+  border: 1px solid rgba(221, 234, 245, 0.92);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.74);
+  color: #11172f;
+  padding: 12px 14px;
+  text-align: left;
+  cursor: pointer;
+
+  strong {
+    color: #1275ea;
+    font-size: 18px;
+  }
+
+  span {
+    color: #59627f;
+    font-size: 13px;
+    font-weight: 850;
+  }
+
+  small {
+    grid-column: 2 / 3;
+    color: #00a884;
+    font-size: 12px;
+    font-weight: 950;
+  }
+`;
+
+const ExamplePreview = styled.section`
+  margin-top: 16px;
+  border: 1px solid rgba(221, 234, 245, 0.92);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 88% 18%, rgba(232, 248, 243, 0.88), transparent 30%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(247, 251, 255, 0.78));
+  padding: 26px;
+  box-shadow: 0 18px 42px rgba(28, 72, 120, 0.08);
+`;
+
+const ExamplePreviewHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 18px;
+  margin-bottom: 18px;
+
+  @media (max-width: 720px) {
+    display: grid;
+  }
+
+  h2 {
+    margin: 0;
+    color: #11172f;
+    font-size: clamp(24px, 2.4vw, 34px);
+    letter-spacing: 0;
+  }
+
+  p {
+    max-width: 560px;
+    margin: 8px 0 0;
+    color: #59627f;
+    line-height: 1.62;
+    font-weight: 760;
+  }
+`;
+
+const ColorRuleList = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+`;
+
+const ColorRule = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid rgba(221, 234, 245, 0.9);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.76);
+  color: #34405f;
+  padding: 8px 11px;
+  font-size: 12px;
+  font-weight: 900;
+
+  &::before {
+    content: '';
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: ${({ $color }) => $color};
+  }
+`;
+
+const MiniResultMock = styled.div`
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.52fr);
+  gap: 14px;
+
+  @media (max-width: 820px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const MiniResultCard = styled.div`
+  border: 1px solid rgba(221, 234, 245, 0.88);
+  border-radius: 16px;
+  background: #ffffff;
+  padding: 20px;
+
+  small {
+    color: #2878d8;
+    font-weight: 950;
+  }
+
+  strong {
+    display: block;
+    margin-top: 8px;
+    color: #11172f;
+    font-size: clamp(30px, 4vw, 46px);
+    line-height: 1.05;
+  }
+
+  p {
+    margin: 12px 0 0;
+    color: #59627f;
+    font-weight: 780;
+  }
+`;
+
+const MiniBars = styled.div`
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 7px;
+  align-items: end;
+  min-height: 178px;
+  border: 1px solid rgba(221, 234, 245, 0.88);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.72);
+  padding: 18px 16px;
+`;
+
+const MiniBar = styled.span`
+  display: block;
+  height: ${({ $height }) => $height}%;
+  min-height: 22px;
+  border-radius: 999px 999px 8px 8px;
+  background: ${({ $color }) => $color};
 `;
 
 const ResultPage = styled.div`
@@ -1149,9 +1438,9 @@ const SummaryBar = styled.section`
   align-items: center;
   gap: 16px;
   border: 1px solid rgba(255, 255, 255, 0.78);
-  border-radius: 8px;
+  border-radius: 16px;
   background: rgba(255, 255, 255, 0.78);
-  padding: 14px 18px;
+  padding: 18px 20px;
   box-shadow: 0 18px 48px rgba(45, 117, 210, 0.12);
   backdrop-filter: blur(20px);
 
@@ -1162,8 +1451,42 @@ const SummaryBar = styled.section`
 
 const SummaryText = styled.strong`
   color: #11172f;
-  font-size: 18px;
+  font-size: clamp(20px, 2vw, 28px);
   line-height: 1.4;
+`;
+
+const SummaryMeta = styled.div`
+  display: grid;
+  gap: 8px;
+`;
+
+const SummaryLabel = styled.span`
+  width: fit-content;
+  border-radius: 999px;
+  background: #edf8ff;
+  color: #1f72d8;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 950;
+`;
+
+const SummaryChips = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+`;
+
+const SummaryChip = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(221, 234, 245, 0.92);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  color: #34405f;
+  padding: 8px 11px;
+  font-size: 14px;
+  font-weight: 900;
 `;
 
 const SecondaryButton = styled.button`
@@ -1186,8 +1509,8 @@ const SecondaryButton = styled.button`
 const ResultHeroCard = styled.section`
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(250px, 0.38fr);
-  gap: clamp(16px, 2.4vw, 28px);
+  grid-template-columns: minmax(0, 1.1fr) minmax(270px, 0.44fr);
+  gap: clamp(22px, 3vw, 40px);
   align-items: center;
   border: 1px solid rgba(255, 255, 255, 0.9);
   border-radius: 18px;
@@ -1196,7 +1519,8 @@ const ResultHeroCard = styled.section`
     radial-gradient(circle at 90% 22%, ${({ $tone }) => $tone?.accentSoft || '#e3f2ff'} 0%, transparent 30%),
     radial-gradient(circle at 5% 96%, rgba(232, 243, 255, 0.72) 0%, transparent 34%),
     linear-gradient(135deg, ${({ $tone }) => $tone?.cardStart || '#ffffff'} 0%, ${({ $tone }) => $tone?.cardMid || '#f5faff'} 48%, ${({ $tone }) => $tone?.cardEnd || '#e8f3ff'} 100%);
-  padding: clamp(34px, 4.4vw, 52px);
+  min-height: 390px;
+  padding: clamp(38px, 4.8vw, 58px);
   box-shadow:
     0 34px 90px ${({ $tone }) => $tone?.shadow || 'rgba(45, 117, 210, 0.16)'},
     0 14px 34px rgba(28, 72, 120, 0.07);
@@ -1247,16 +1571,16 @@ const ResultEyebrow = styled.div`
   width: fit-content;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.58);
-  padding: 7px 11px;
+  padding: 9px 13px;
   color: ${({ $tone }) => $tone?.text || '#1267c9'};
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 950;
 `;
 
 const ResultHeadline = styled.h1`
-  margin: 16px 0 0;
+  margin: 18px 0 0;
   color: ${({ $tone }) => $tone?.text || '#1267c9'};
-  font-size: clamp(38px, 4.8vw, 62px);
+  font-size: clamp(44px, 5.4vw, 72px);
   line-height: 1.05;
   letter-spacing: 0;
 `;
@@ -1273,13 +1597,13 @@ const PercentLine = styled.div`
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 14px;
-  margin-top: 22px;
+  gap: 16px;
+  margin-top: 18px;
 `;
 
 const PercentValue = styled.strong`
   color: ${({ $tone }) => $tone?.text || '#1267c9'};
-  font-size: clamp(62px, 7.8vw, 96px);
+  font-size: clamp(78px, 9.2vw, 118px);
   line-height: 0.95;
   letter-spacing: -0.035em;
 `;
@@ -1289,16 +1613,16 @@ const GradeBadge = styled.span`
   align-items: center;
   gap: 8px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.72);
+  border: 1px solid ${({ $tone }) => $tone?.accent || '#1275ea'};
   background: ${({ $tone }) => $tone?.accentSoft || '#e0f2ff'};
   color: ${({ $tone }) => $tone?.text || '#1275ea'};
-  padding: 10px 14px;
-  font-size: 16px;
+  padding: 12px 16px;
+  font-size: 18px;
   font-weight: 950;
 `;
 
 const ResultSideStat = styled.div`
-  min-height: 218px;
+  min-height: 260px;
   display: grid;
   gap: 8px;
   place-items: center;
@@ -1310,7 +1634,7 @@ const ResultSideStat = styled.div`
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.86),
     0 10px 24px rgba(16, 24, 47, 0.035);
-  padding: 22px;
+  padding: 26px;
 `;
 
 const GaugeLabel = styled.div`
@@ -1321,8 +1645,8 @@ const GaugeLabel = styled.div`
 `;
 
 const GaugeCircle = styled.div`
-  width: 152px;
-  height: 152px;
+  width: 178px;
+  height: 178px;
   display: grid;
   place-items: center;
   border-radius: 50%;
@@ -1334,13 +1658,13 @@ const GaugeCircle = styled.div`
     inset 0 0 0 14px rgba(221, 234, 245, 0.82),
     0 18px 34px ${({ $tone }) => $tone?.shadow || 'rgba(45, 117, 210, 0.16)'};
   color: #11172f;
-  font-size: 28px;
+  font-size: 34px;
   font-weight: 900;
 `;
 
 const GaugeCaption = styled.div`
   color: ${({ $tone }) => $tone?.text || '#2f80ed'};
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 900;
   opacity: 0.86;
 `;
@@ -1348,7 +1672,7 @@ const GaugeCaption = styled.div`
 const EvidenceGrid = styled.section`
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
+  gap: 14px;
 
   @media (max-width: 860px) {
     grid-template-columns: 1fr;
@@ -1356,10 +1680,10 @@ const EvidenceGrid = styled.section`
 `;
 
 const EvidenceCard = styled.article`
-  min-height: 154px;
+  min-height: 158px;
   display: grid;
   align-content: start;
-  gap: 13px;
+  gap: 14px;
   border: 1px solid rgba(221, 234, 245, 0.92);
   border-radius: 16px;
   background:
@@ -1382,13 +1706,13 @@ const EvidenceHead = styled.div`
   align-items: center;
   gap: 12px;
   color: #59627f;
-  font-size: 13px;
-  font-weight: 850;
+  font-size: 14px;
+  font-weight: 900;
 `;
 
 const EvidenceIcon = styled.span`
-  width: 46px;
-  height: 46px;
+  width: 50px;
+  height: 50px;
   display: inline-grid;
   place-items: center;
   border: 1px solid rgba(221, 234, 245, 0.84);
@@ -1402,14 +1726,14 @@ const EvidenceIcon = styled.span`
 
 const EvidenceValue = styled.strong`
   color: #11172f;
-  font-size: clamp(28px, 3vw, 36px);
+  font-size: clamp(30px, 3.4vw, 42px);
   line-height: 1.1;
   letter-spacing: -0.045em;
 `;
 
 const EvidenceSub = styled.span`
   color: #6b7890;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 760;
 `;
 
@@ -1419,7 +1743,7 @@ const ChartCard = styled.section`
   background:
     radial-gradient(circle at 86% 18%, rgba(232, 243, 255, 0.62), transparent 28%),
     rgba(255, 255, 255, 0.88);
-  padding: 26px;
+  padding: 24px;
   box-shadow: 0 18px 40px rgba(28, 72, 120, 0.08);
   backdrop-filter: blur(20px);
 `;
@@ -1439,14 +1763,14 @@ const ChartHint = styled.div`
 
 const MethodSection = styled.section`
   display: grid;
-  grid-template-columns: minmax(240px, 0.34fr) minmax(0, 1fr);
-  gap: 28px;
+  grid-template-columns: minmax(250px, 0.3fr) minmax(0, 1fr);
+  gap: 24px;
   border: 1px solid rgba(221, 234, 245, 0.92);
   border-radius: 18px;
   background:
     linear-gradient(145deg, rgba(255, 255, 255, 0.82), rgba(247, 251, 255, 0.66)),
     rgba(255, 255, 255, 0.66);
-  padding: 32px;
+  padding: 30px;
   box-shadow: 0 14px 38px rgba(45, 117, 210, 0.08);
   backdrop-filter: blur(18px);
 
@@ -1487,10 +1811,12 @@ const MethodGrid = styled.div`
 `;
 
 const MethodCard = styled.article`
+  position: relative;
+  min-height: 188px;
   border: 1px solid rgba(221, 234, 245, 0.9);
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.82);
-  padding: 24px;
+  padding: 22px;
   box-shadow: 0 10px 28px rgba(16, 24, 47, 0.05);
 
   svg {
@@ -1516,6 +1842,15 @@ const MethodCard = styled.article`
     font-size: 14px;
     line-height: 1.58;
   }
+`;
+
+const MethodNumber = styled.span`
+  position: absolute;
+  right: 18px;
+  top: 18px;
+  color: rgba(18, 117, 234, 0.18);
+  font-size: 30px;
+  font-weight: 950;
 `;
 
 const defaultForm = {
@@ -1912,8 +2247,22 @@ function BusCrowdingPage() {
           <>
             <SearchHero>
               <HeroText>
+                <HeroBadgeRow aria-label="서비스 핵심 정보">
+                  <HeroBadge>
+                    <Database size={15} aria-hidden="true" />
+                    서울시 공공데이터 기반
+                  </HeroBadge>
+                  <HeroBadge>
+                    <BarChart3 size={15} aria-hidden="true" />
+                    노선·정류장별 시간대 예측
+                  </HeroBadge>
+                  <HeroBadge>
+                    <Clock3 size={15} aria-hidden="true" />
+                    현재 시간 기준 제공
+                  </HeroBadge>
+                </HeroBadgeRow>
                 <HeroTitle>지금 타도 괜찮을까요?</HeroTitle>
-                <HeroCopy>노선과 정류장을 선택하면 현재 시간 기준 예상 혼잡도를 확인할 수 있어요.</HeroCopy>
+                <HeroCopy>노선과 정류장을 선택하면 공공 교통 데이터를 바탕으로 지금 버스를 타도 괜찮을지 바로 판단해드려요.</HeroCopy>
                 {error && <ErrorBox>{error}</ErrorBox>}
                 <SearchCard>
                   <BusSearchBox
@@ -1950,34 +2299,116 @@ function BusCrowdingPage() {
               </HeroVisual>
             </SearchHero>
 
-            <FeatureGrid id="project">
+            <SectionAnchor id="project" />
+            <FeatureGrid>
               <FeatureCard>
                 <FeatureIcon><Clock3 size={24} aria-hidden="true" /></FeatureIcon>
                 <div>
                   <FeatureTitle>빠른 확인</FeatureTitle>
-                  <FeatureText>현재 시간 기준 예측</FeatureText>
+                  <FeatureText>노선과 정류장 선택 후 바로 결과 확인</FeatureText>
                 </div>
               </FeatureCard>
               <FeatureCard>
                 <FeatureIcon><Database size={24} aria-hidden="true" /></FeatureIcon>
                 <div>
                   <FeatureTitle>데이터 기반</FeatureTitle>
-                  <FeatureText>서울시 공공데이터 활용</FeatureText>
+                  <FeatureText>서울시 승하차·노선·정류장 데이터 활용</FeatureText>
                 </div>
               </FeatureCard>
               <FeatureCard>
                 <FeatureIcon><Gauge size={24} aria-hidden="true" /></FeatureIcon>
                 <div>
                   <FeatureTitle>직관적 판단</FeatureTitle>
-                  <FeatureText>여유 · 보통 · 혼잡으로 안내</FeatureText>
+                  <FeatureText>혼잡도 수치와 추천 시간대로 안내</FeatureText>
                 </div>
               </FeatureCard>
             </FeatureGrid>
+
+            <HomeStoryGrid>
+              <StoryPanel id="method">
+                <h2>사용 방법 3단계</h2>
+                <p>노선, 정류장, 기준 월을 고르면 시간대별 승차 패턴을 바탕으로 지금 타도 괜찮은지 판단합니다.</p>
+                <StepList>
+                  <StepCard>
+                    <strong>1. 노선 선택</strong>
+                    <span>서울 버스 번호를 입력하거나 목록에서 고릅니다.</span>
+                  </StepCard>
+                  <StepCard>
+                    <strong>2. 정류장 선택</strong>
+                    <span>해당 노선이 지나는 정류장을 기준으로 좁힙니다.</span>
+                  </StepCard>
+                  <StepCard>
+                    <strong>3. 결과 확인</strong>
+                    <span>혼잡도, 예상 인원, 추천 시간대를 한 화면에서 봅니다.</span>
+                  </StepCard>
+                </StepList>
+              </StoryPanel>
+
+              <RoutePanel>
+                <h2>많이 찾는 노선</h2>
+                <p>예시 조건을 눌러 검색 폼에 빠르게 채워볼 수 있습니다.</p>
+                <RouteList>
+                  {popularRoutes.map((item) => (
+                    <RouteItem
+                      key={`${item.route}-${item.station}`}
+                      type="button"
+                      onClick={() => setForm((current) => ({ ...current, route: item.route, station: item.station }))}
+                    >
+                      <strong>{item.route}</strong>
+                      <span>{item.station}</span>
+                      <small>{item.note}</small>
+                    </RouteItem>
+                  ))}
+                </RouteList>
+              </RoutePanel>
+            </HomeStoryGrid>
+
+            <ExamplePreview id="example">
+              <ExamplePreviewHeader>
+                <div>
+                  <h2>결과 예시</h2>
+                  <p>캡처했을 때 서비스 성격이 드러나도록 혼잡도 수치, 상태 색상, 그래프 흐름을 함께 보여줍니다.</p>
+                </div>
+                <ColorRuleList aria-label="혼잡도 색상 기준">
+                  {crowdingRules.map((rule) => (
+                    <ColorRule key={rule.label} $color={rule.color}>
+                      {rule.label} {rule.range}
+                    </ColorRule>
+                  ))}
+                </ColorRuleList>
+              </ExamplePreviewHeader>
+              <MiniResultMock>
+                <MiniResultCard>
+                  <small>1218번 · 남대문중학교 · 2026년 5월 · 15:00 기준</small>
+                  <strong>지금은 다소 붐빌 수 있어요</strong>
+                  <p>혼잡도 68% · 예상 18명 · 평균보다 24% 높음</p>
+                </MiniResultCard>
+                <MiniBars aria-hidden="true">
+                  <MiniBar $height={34} $color="#00a884" />
+                  <MiniBar $height={42} $color="#00a884" />
+                  <MiniBar $height={58} $color="#4ba3f2" />
+                  <MiniBar $height={76} $color="#ff9f43" />
+                  <MiniBar $height={68} $color="#ff9f43" />
+                  <MiniBar $height={46} $color="#4ba3f2" />
+                  <MiniBar $height={88} $color="#ff6b6b" />
+                  <MiniBar $height={54} $color="#4ba3f2" />
+                </MiniBars>
+              </MiniResultMock>
+            </ExamplePreview>
           </>
         ) : (
           <ResultPage>
-            <SummaryBar>
-              <SummaryText>{resultSummary}</SummaryText>
+            <SummaryBar id="project">
+              <SummaryMeta>
+                <SummaryLabel>선택 조건</SummaryLabel>
+                <SummaryText>{resultSummary}</SummaryText>
+                <SummaryChips aria-label="현재 예측 조건 상세">
+                  <SummaryChip><BusFront size={14} aria-hidden="true" />{form.route}번</SummaryChip>
+                  <SummaryChip><MapPin size={14} aria-hidden="true" />{getStationLabel(form.station)}</SummaryChip>
+                  <SummaryChip><CalendarDays size={14} aria-hidden="true" />{selectedMonthLabel}</SummaryChip>
+                  <SummaryChip><Clock3 size={14} aria-hidden="true" />{String(form.hour).padStart(2, '0')}:00 기준</SummaryChip>
+                </SummaryChips>
+              </SummaryMeta>
               <SecondaryButton type="button" onClick={() => setHasStarted(false)}>
                 <RotateCcw size={16} aria-hidden="true" />
                 조건 수정하기
@@ -2034,11 +2465,25 @@ function BusCrowdingPage() {
             </EvidenceGrid>
 
             <ChartCard>
+              <ExamplePreviewHeader>
+                <div>
+                  <h2>시간대별 혼잡도 그래프</h2>
+                  <p>선택한 시간대와 추천 구간을 함께 표시해 포트폴리오 캡처에서도 판단 기준이 드러납니다.</p>
+                </div>
+                <ColorRuleList aria-label="혼잡도 색상 기준">
+                  {crowdingRules.map((rule) => (
+                    <ColorRule key={rule.label} $color={rule.color}>
+                      {rule.label} {rule.range}
+                    </ColorRule>
+                  ))}
+                </ColorRuleList>
+              </ExamplePreviewHeader>
               <ChartHint $tone={resultTone}>추천 구간: {recommendedTime}</ChartHint>
               <CrowdingChart
                 data={chartData}
                 selectedHour={Number(form.hour)}
                 recommendedFromHour={recommendedFromHour}
+                showHeader={false}
                 onSelectHour={(hour) => setForm((current) => ({ ...current, hour: String(hour) }))}
               />
             </ChartCard>
@@ -2046,28 +2491,32 @@ function BusCrowdingPage() {
             <MethodSection id="method">
               <MethodIntro>
                 <h2>어떻게 예측했나요?</h2>
-                <p>데이터와 알고리즘으로 더 정확한 버스 혼잡도를 예측합니다.</p>
+                <p>공공 교통 데이터를 사용자가 이해하기 쉬운 판단 문장과 그래프로 바꿉니다.</p>
               </MethodIntro>
               <MethodGrid>
                 <MethodCard>
+                  <MethodNumber>01</MethodNumber>
                   <Target size={24} color="#1275ea" aria-hidden="true" />
                   <strong>문제 정의</strong>
-                  <p>탑승 전 혼잡도를 몰라 생기는 불편을 줄입니다.</p>
+                  <p>버스를 탈 때 특정 노선과 정류장이 지금 얼마나 붐비는지 알기 어렵습니다.</p>
                 </MethodCard>
                 <MethodCard>
+                  <MethodNumber>02</MethodNumber>
                   <Database size={24} color="#12a46f" aria-hidden="true" />
                   <strong>사용 데이터</strong>
-                  <p>서울시 승하차, 노선, 정류장 데이터를 활용합니다.</p>
+                  <p>서울시 승하차, 노선, 정류장 데이터를 활용해 예측 기준을 만듭니다.</p>
                 </MethodCard>
                 <MethodCard>
+                  <MethodNumber>03</MethodNumber>
                   <BarChart3 size={24} color="#7b6cf6" aria-hidden="true" />
                   <strong>혼잡도 계산</strong>
-                  <p>시간대별 패턴으로 혼잡도 등급을 산출합니다.</p>
+                  <p>시간대별 승차 패턴을 기반으로 예상 혼잡도와 등급을 계산합니다.</p>
                 </MethodCard>
                 <MethodCard>
+                  <MethodNumber>04</MethodNumber>
                   <Heart size={24} color="#e65091" aria-hidden="true" />
                   <strong>사용자 가치</strong>
-                  <p>더 쾌적한 탑승 시간을 고를 수 있게 돕습니다.</p>
+                  <p>사용자가 더 여유로운 시간대를 선택할 수 있도록 돕습니다.</p>
                 </MethodCard>
               </MethodGrid>
             </MethodSection>
