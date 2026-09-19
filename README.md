@@ -1,12 +1,20 @@
-# 서울 버스 시간대별 혼잡도
+# 타도될까
 
 서울시 버스 승하차 자료를 노선·정류장·시간대별로 조회하고, 평균 승차 인원을 기준으로 혼잡 구간을 보여주는 웹 서비스입니다.
 
-## 만든 이유
+[배포된 데모 보기](https://transport-service-omega.vercel.app/)
+
+![타도될까 노선과 정류장 선택 화면](docs/preview.png)
+
+## 문제
 
 버스 도착 정보만으로는 어느 시간대가 덜 붐비는지 비교하기 어렵습니다. 공개된 월별 승하차 자료를 사용해 같은 노선과 정류장의 시간대별 차이를 한 화면에서 확인할 수 있도록 만들었습니다.
 
-## 현재 동작하는 범위
+## 해결 방식
+
+Python으로 최근 월 CSV를 노선·정류장·시간대 조회 구조의 gzip JSON 캐시로 만들었습니다. Express는 캐시를 메모리 인덱스로 구성해 선택 조건에 맞는 데이터만 반환하고, React 화면은 일평균 승차 인원을 혼잡 단계와 이용 안내로 바꿉니다.
+
+## 주요 기능
 
 - 데이터가 존재하는 월, 노선, 정류장 선택
 - 시간대별 일평균 승차 인원 그래프 조회
@@ -74,6 +82,13 @@ npm run build
 npm audit --omit=dev --prefix frontend
 npm audit --omit=dev --prefix backend
 ```
+
+## 배포
+
+- Production: [transport-service-omega.vercel.app](https://transport-service-omega.vercel.app/)
+- Vercel에서 React 프론트엔드와 Express API를 각각 서비스로 빌드합니다.
+- 배포에는 최근 월의 `bus_api_cache.json.gz`만 포함하고 원본 CSV와 12개월 전체 캐시는 제외합니다.
+- `/api/*` 요청은 Express 서비스가 처리합니다.
 
 ## 여러 달의 데이터를 확인하려면
 
