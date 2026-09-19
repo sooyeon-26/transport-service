@@ -20,3 +20,5 @@ yarn-error.log*
 backend/model/bus_api_cache.json
 backend/model/*.pkl
 backend/data/
+
+.vercel
