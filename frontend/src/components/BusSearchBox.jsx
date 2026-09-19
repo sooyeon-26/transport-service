@@ -25,18 +25,6 @@ const Panel = styled.form`
   ${({ $showMonth, $showHour }) =>
     $showMonth && !$showHour
       ? `
-        > label:nth-of-type(1) {
-          grid-column: 1 / 2;
-        }
-
-        > label:nth-of-type(2) {
-          grid-column: 2 / 3;
-        }
-
-        > label:nth-of-type(3) {
-          grid-column: 3 / 4;
-        }
-
         > button {
           grid-column: 1 / -1;
         }
@@ -52,10 +40,13 @@ const Panel = styled.form`
   }
 
   @media (max-width: 640px) {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
 
-    > label,
-    > button {
+    && > label:nth-of-type(1),
+    && > label:nth-of-type(2),
+    && > label:nth-of-type(3),
+    && > label:nth-of-type(4),
+    && > button {
       grid-column: 1 / -1;
     }
   }
@@ -384,7 +375,7 @@ function BusSearchBox({ form, setForm, onSubmit, loading, options, showHour = fa
           <ComboWrap>
             <Select name="month" value={form.month || ''} onChange={update}>
               <option value="" disabled>
-                2024-05
+                기준 월 불러오는 중
               </option>
               {(options.months?.length ? options.months : []).map((month) => (
                 <option key={month.value} value={month.value}>

@@ -4,6 +4,7 @@ import { BarChart3, BusFront, CalendarDays, Clock3, Database, Gauge, Heart, MapP
 import { fetchHourly, fetchOptions, fetchStations } from '../api/busApi.js';
 import BusSearchBox from '../components/BusSearchBox.jsx';
 import CrowdingChart from '../components/CrowdingChart.jsx';
+import { popularRoutes } from './popularRoutes.js';
 
 const splashOut = keyframes`
   to {
@@ -847,12 +848,6 @@ const crowdingRules = [
   { label: '보통', color: '#4ba3f2', range: '31~60%' },
   { label: '혼잡', color: '#ff9f43', range: '61~80%' },
   { label: '매우 혼잡', color: '#ff6b6b', range: '81%+' }
-];
-
-const popularRoutes = [
-  { route: '1218', station: '남대문중학교', note: '등하교·출퇴근' },
-  { route: '160', station: '강남역', note: '도심 이동' },
-  { route: '740', station: '홍대입구', note: '저녁 피크' }
 ];
 
 const PageWrap = styled.div`
@@ -2120,6 +2115,11 @@ function BusCrowdingPage() {
         month: searchForm.month || options.defaultMonth
       };
       const hourlyData = await fetchHourly({ route: params.route, station: params.station, month: params.month, dayType: 'all' });
+      if (!Array.isArray(hourlyData) || hourlyData.length === 0) {
+        setHourly([]);
+        setError('선택한 노선과 정류장에 조회 가능한 데이터가 없습니다. 다른 조건을 선택해주세요.');
+        return false;
+      }
       setHourly(hourlyData);
       return true;
     } catch (requestError) {
@@ -2154,7 +2154,7 @@ function BusCrowdingPage() {
           route: '',
           station: '',
           hour: data.hours?.includes(new Date().getHours()) ? String(new Date().getHours()) : String(data.hours?.[0] || 8),
-          month: ''
+          month: selectedMonth
         };
 
         setOptions({ ...data, stations: [] });
@@ -2355,7 +2355,7 @@ function BusCrowdingPage() {
                       onClick={() => setForm((current) => ({ ...current, route: item.route, station: item.station }))}
                     >
                       <strong>{item.route}</strong>
-                      <span>{item.station}</span>
+                      <span>{item.label}</span>
                       <small>{item.note}</small>
                     </RouteItem>
                   ))}
@@ -2379,7 +2379,7 @@ function BusCrowdingPage() {
               </ExamplePreviewHeader>
               <MiniResultMock>
                 <MiniResultCard>
-                  <small>1218번 · 남대문중학교 · 2026년 5월 · 15:00 기준</small>
+                  <small>{popularRoutes[0].route}번 · {popularRoutes[0].label} · 2026년 5월 · 15:00 기준</small>
                   <strong>지금은 다소 붐빌 수 있어요</strong>
                   <p>혼잡도 68% · 예상 18명 · 평균보다 24% 높음</p>
                 </MiniResultCard>
