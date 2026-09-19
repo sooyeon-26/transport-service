@@ -1,0 +1,7 @@
+csv/
+.venv/
+backend/model/bus_api_cache.json
+backend/model/*.pkl
+frontend/dist/
+frontend/node_modules/
+backend/node_modules/
