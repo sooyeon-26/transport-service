@@ -1,3 +1,4 @@
+import argparse
 import calendar
 import csv
 import json
@@ -54,10 +55,13 @@ def parse_month(path, rows):
     return ""
 
 
-def build_cache():
+def build_cache(month_limit=1):
     csv_files = sorted(CSV_DIR.glob("*.csv"))
     if not csv_files:
         raise RuntimeError(f"CSV 파일을 찾지 못했습니다: {CSV_DIR}")
+
+    if month_limit > 0:
+        csv_files = csv_files[-month_limit:]
 
     series = {}
     month_route_stations = {}
@@ -130,7 +134,15 @@ def build_cache():
 
 
 if __name__ == "__main__":
-    cache = build_cache()
+    parser = argparse.ArgumentParser(description="Build the JSON cache used by the bus API.")
+    parser.add_argument(
+        "--months",
+        type=int,
+        default=1,
+        help="Number of recent monthly CSV files to include. Use 0 to include every month.",
+    )
+    args = parser.parse_args()
+    cache = build_cache(max(0, args.months))
     print(f"months: {len(cache['months'])}")
     print(f"routes: {len(cache['routes'])}")
     print(f"series: {len(cache['series'])}")

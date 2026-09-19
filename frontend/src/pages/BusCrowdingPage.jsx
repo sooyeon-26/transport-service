@@ -2066,7 +2066,7 @@ function BusCrowdingPage() {
     : {
         meta: `${form.hour || new Date().getHours()}:00 기준`,
         text: form.station ? '현재 시간 기준으로 확인' : '정류장 선택 대기',
-        sub: form.station ? '혼잡도 확인하기를 눌러 예측해보세요.' : '노선과 정류장을 먼저 골라주세요.'
+        sub: form.station ? '혼잡도 확인하기를 눌러 시간대 평균을 확인해보세요.' : '노선과 정류장을 먼저 골라주세요.'
       };
   const selectedMonthLabel = useMemo(
     () => getMonthLabel(options.months, form.month || options.defaultMonth),
@@ -2123,7 +2123,7 @@ function BusCrowdingPage() {
       setHourly(hourlyData);
       return true;
     } catch (requestError) {
-      setError(requestError.response?.data?.error || requestError.message || '예측 요청에 실패했습니다.');
+      setError(requestError.response?.data?.error || requestError.message || '혼잡도 조회에 실패했습니다.');
       return false;
     } finally {
       setLoading(false);
@@ -2225,7 +2225,7 @@ function BusCrowdingPage() {
             </SplashBusStage>
             <SplashLogo>
               <SplashBrand>타도될까</SplashBrand>
-              <SplashTagline>서울 버스 혼잡도 예측</SplashTagline>
+              <SplashTagline>서울 버스 시간대별 혼잡도</SplashTagline>
             </SplashLogo>
           </SplashScene>
         </SplashOverlay>
@@ -2238,7 +2238,7 @@ function BusCrowdingPage() {
           </BrandGroup>
           <HeaderNav aria-label="주요 메뉴">
             <a href="#project">프로젝트 소개</a>
-            <a href="#method">예측 방식</a>
+            <a href="#method">계산 방식</a>
             <a href="#example">결과 예시</a>
           </HeaderNav>
         </SiteHeader>
@@ -2254,7 +2254,7 @@ function BusCrowdingPage() {
                   </HeroBadge>
                   <HeroBadge>
                     <BarChart3 size={15} aria-hidden="true" />
-                    노선·정류장별 시간대 예측
+                    노선·정류장별 시간대 비교
                   </HeroBadge>
                   <HeroBadge>
                     <Clock3 size={15} aria-hidden="true" />
@@ -2402,7 +2402,7 @@ function BusCrowdingPage() {
               <SummaryMeta>
                 <SummaryLabel>선택 조건</SummaryLabel>
                 <SummaryText>{resultSummary}</SummaryText>
-                <SummaryChips aria-label="현재 예측 조건 상세">
+                <SummaryChips aria-label="현재 조회 조건 상세">
                   <SummaryChip><BusFront size={14} aria-hidden="true" />{form.route}번</SummaryChip>
                   <SummaryChip><MapPin size={14} aria-hidden="true" />{getStationLabel(form.station)}</SummaryChip>
                   <SummaryChip><CalendarDays size={14} aria-hidden="true" />{selectedMonthLabel}</SummaryChip>
@@ -2490,7 +2490,7 @@ function BusCrowdingPage() {
 
             <MethodSection id="method">
               <MethodIntro>
-                <h2>어떻게 예측했나요?</h2>
+                <h2>어떻게 계산했나요?</h2>
                 <p>공공 교통 데이터를 사용자가 이해하기 쉬운 판단 문장과 그래프로 바꿉니다.</p>
               </MethodIntro>
               <MethodGrid>
@@ -2504,13 +2504,13 @@ function BusCrowdingPage() {
                   <MethodNumber>02</MethodNumber>
                   <Database size={24} color="#12a46f" aria-hidden="true" />
                   <strong>사용 데이터</strong>
-                  <p>서울시 승하차, 노선, 정류장 데이터를 활용해 예측 기준을 만듭니다.</p>
+                  <p>서울시 승하차 자료를 월의 일수로 나눠 시간대별 일평균 기준을 만듭니다.</p>
                 </MethodCard>
                 <MethodCard>
                   <MethodNumber>03</MethodNumber>
                   <BarChart3 size={24} color="#7b6cf6" aria-hidden="true" />
                   <strong>혼잡도 계산</strong>
-                  <p>시간대별 승차 패턴을 기반으로 예상 혼잡도와 등급을 계산합니다.</p>
+                  <p>시간대별 일평균 승차 인원을 기준 구간과 비교해 혼잡 단계를 계산합니다.</p>
                 </MethodCard>
                 <MethodCard>
                   <MethodNumber>04</MethodNumber>

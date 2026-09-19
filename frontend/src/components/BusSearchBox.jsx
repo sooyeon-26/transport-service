@@ -344,7 +344,7 @@ function SearchableField({ label, name, value, options, placeholder, inputMode, 
   );
 }
 
-function BusSearchBox({ form, setForm, onSubmit, loading, options, showHour = false, showMonth = false, submitLabel = '예측하기', variant = 'card' }) {
+function BusSearchBox({ form, setForm, onSubmit, loading, options, showHour = false, showMonth = false, submitLabel = '혼잡도 조회', variant = 'card' }) {
   const stationOptions = options.stations || [];
 
   const update = (event) => {

@@ -11,14 +11,14 @@ const API_CACHE_PATH = path.join(MODEL_DIR, 'bus_api_cache.json');
 let cache = null;
 const FALLBACK_DAY_TYPES = ['all', 'weekday', 'weekend'];
 
-function labelCrowding(passengers) {
+export function labelCrowding(passengers) {
   if (passengers <= 20) return '여유';
   if (passengers <= 50) return '보통';
   if (passengers <= 80) return '혼잡';
   return '매우 혼잡';
 }
 
-function recommendation(label, hour) {
+export function recommendation(label, hour) {
   if (label === '혼잡' || label === '매우 혼잡') {
     return `${Number(hour)}시는 혼잡도가 높습니다. 가능하면 ${Math.min(Number(hour) + 1, 23)}시 이후 이용을 추천합니다.`;
   }

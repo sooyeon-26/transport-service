@@ -6,7 +6,11 @@
     "dev": "npm run dev --prefix frontend",
     "server": "npm run dev --prefix backend",
     "install:all": "npm install --prefix backend && npm install --prefix frontend",
-    "download:data": "backend/venv/bin/python backend/model/download_seoul_bus_data.py",
-    "train": "backend/venv/bin/python backend/model/train_model.py"
+    "build:cache": "python backend/model/build_bus_api_cache.py",
+    "build:cache:all": "python backend/model/build_bus_api_cache.py --months 0",
+    "download:data": "python backend/model/download_seoul_bus_data.py",
+    "train": "python backend/model/train_model.py",
+    "test": "npm test --prefix backend",
+    "build": "npm run build --prefix frontend"
   }
 }

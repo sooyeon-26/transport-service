@@ -270,7 +270,7 @@ function CrowdingChart({ data, selectedHour, recommendedFromHour, onSelectHour, 
           </BarChart>
         </ResponsiveContainer>
       ) : (
-        <Empty>예측 조건을 입력하면 차트가 표시됩니다.</Empty>
+        <Empty>조회 조건을 입력하면 차트가 표시됩니다.</Empty>
       )}
     </Panel>
   );
