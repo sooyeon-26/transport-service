@@ -1,6 +1,7 @@
 import argparse
 import calendar
 import csv
+import gzip
 import json
 import re
 from pathlib import Path
@@ -9,6 +10,7 @@ from pathlib import Path
 ROOT_DIR = Path(__file__).resolve().parents[2]
 CSV_DIR = ROOT_DIR / "csv"
 API_CACHE_PATH = Path(__file__).resolve().parent / "bus_api_cache.json"
+API_CACHE_GZIP_PATH = Path(__file__).resolve().parent / "bus_api_cache.json.gz"
 
 FILE_MONTH_PATTERN = re.compile(r"(\d{4})년_.*\((\d{2})월\)\.csv$")
 BOARDING_PATTERN = re.compile(r"0?(\d{1,2})시승차총승객수")
@@ -129,7 +131,9 @@ def build_cache(month_limit=1):
         "series": series,
     }
 
-    API_CACHE_PATH.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+    serialized = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    with gzip.open(API_CACHE_GZIP_PATH, "wb", compresslevel=9) as file:
+        file.write(serialized)
     return payload
 
 
@@ -146,4 +150,4 @@ if __name__ == "__main__":
     print(f"months: {len(cache['months'])}")
     print(f"routes: {len(cache['routes'])}")
     print(f"series: {len(cache['series'])}")
-    print(f"saved: {API_CACHE_PATH}")
+    print(f"saved: {API_CACHE_GZIP_PATH}")

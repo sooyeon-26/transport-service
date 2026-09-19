@@ -2,12 +2,14 @@ import { Router } from 'express';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { gunzipSync } from 'node:zlib';
 
 const router = Router();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const MODEL_DIR = path.resolve(__dirname, '../model');
 const API_CACHE_PATH = path.join(MODEL_DIR, 'bus_api_cache.json');
+const API_CACHE_GZIP_PATH = path.join(MODEL_DIR, 'bus_api_cache.json.gz');
 let cache = null;
 const FALLBACK_DAY_TYPES = ['all', 'weekday', 'weekend'];
 
@@ -30,7 +32,10 @@ export function recommendation(label, hour) {
 
 function getCache() {
   if (!cache) {
-    const payload = JSON.parse(fs.readFileSync(API_CACHE_PATH, 'utf-8'));
+    const cacheContents = fs.existsSync(API_CACHE_GZIP_PATH)
+      ? gunzipSync(fs.readFileSync(API_CACHE_GZIP_PATH)).toString('utf-8')
+      : fs.readFileSync(API_CACHE_PATH, 'utf-8');
+    const payload = JSON.parse(cacheContents);
     const byKey = new Map();
     const byRouteStationDay = new Map();
     const defaultMonth = payload.defaultMonth || payload.months?.at?.(-1)?.value || 'default';

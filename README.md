@@ -52,7 +52,7 @@ npm run install:all
 npm run build:cache
 ```
 
-`build:cache`는 가장 최근 월의 CSV만 읽어 `backend/model/bus_api_cache.json`을 만듭니다. 캐시는 생성 파일이라 Git에 포함하지 않습니다.
+`build:cache`는 가장 최근 월의 CSV만 읽어 `backend/model/bus_api_cache.json.gz`를 만듭니다. 배포 환경에서는 이 압축 캐시를 읽고, 로컬에 기존 JSON 캐시가 있으면 폴백으로 사용할 수 있습니다.
 
 서버 두 개를 각각 실행합니다.
 
@@ -83,7 +83,7 @@ npm audit --omit=dev --prefix backend
 npm run build:cache:all
 ```
 
-현재 12개월 데이터를 모두 포함하면 캐시가 약 317MB까지 커지고, 서버가 시작할 때 JSON 전체를 메모리에 올립니다. 배포 환경에서는 최근 월만 사용하거나 데이터베이스로 옮기는 편이 안전합니다.
+현재 12개월 데이터를 압축 전 JSON으로 모두 구성하면 약 317MB까지 커지고, 서버가 시작할 때 전체 내용을 메모리에 올립니다. 배포 환경에서는 최근 월만 사용하거나 데이터베이스로 옮기는 편이 안전합니다.
 
 ## 데이터와 실험 파일
 
