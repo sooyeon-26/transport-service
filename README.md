@@ -88,11 +88,19 @@ npm run build:cache:all
 ## 데이터와 실험 파일
 
 - `csv/`: 2025년 6월부터 2026년 5월까지의 월별 원본 자료
-- `backend/data/bus_passenger.csv`: 2026년 5월 원본과 동일한 학습 파이프라인 입력 스냅샷
-- `backend/model/processed_bus_data.pkl`: Python 실험용 전처리 결과
-- `backend/model/bus_crowding_model.pkl`: Random Forest 실험 모델
+- `backend/model/preprocess.py`: 가장 최근 월 CSV를 실험용 학습 데이터로 변환
+- `backend/model/train_model.py`: Random Forest 실험 모델과 전처리 결과 생성
 
-모델 파일과 `predict.py`는 별도의 실험 흔적이며 현재 Express API 요청 경로에서는 사용하지 않습니다. 현재 저장소에는 원본과 동일한 15.8MB CSV가 한 번 더 들어 있고, 전처리 결과도 약 53.8MB이므로 공개 저장소로 정리할 때는 Git LFS나 외부 데이터 저장소로 옮기는 작업이 필요합니다. 기존 Git 기록의 크기는 파일을 현재 커밋에서 지우는 것만으로 줄어들지 않아 이번 정리에서는 원본을 보존했습니다.
+`processed_bus_data.pkl`과 `bus_crowding_model.pkl`은 생성 파일이라 Git에 포함하지 않습니다. 실험을 다시 실행하려면 아래 명령을 사용합니다.
+
+```bash
+python -m pip install -r backend/model/requirements.txt
+npm run train
+```
+
+기본값은 `csv/`에서 파일명이 가장 최신인 월을 사용합니다. 다른 파일을 쓰려면 `BUS_DATA_PATH`에 경로를 지정합니다. 모델과 `predict.py`는 별도의 실험 코드이며 현재 Express API 요청 경로에서는 사용하지 않습니다.
+
+월별 원본 CSV는 데이터 출처를 재현하기 위해 현재 저장소에 남겨 두었습니다. Git 기록에는 과거의 중복 CSV와 생성 모델도 남아 있으므로 공개 저장소 크기를 실질적으로 줄이려면 Git LFS로 이전하거나 코드 중심의 새 저장소를 만드는 과정이 추가로 필요합니다.
 
 ## 주요 API
 

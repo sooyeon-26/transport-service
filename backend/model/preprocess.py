@@ -1,11 +1,29 @@
-from pathlib import Path
 import calendar
+import os
 import re
+from pathlib import Path
+
 import pandas as pd
 
-# 실제 서울시 공공데이터 CSV로 교체할 때 가장 먼저 수정할 영역입니다.
-# 예: "노선번호"가 "버스노선번호", "정류장명"이 "역명"처럼 다르면 여기만 바꾸면 됩니다.
-DATA_PATH = Path(__file__).resolve().parents[1] / "data" / "bus_passenger.csv"
+ROOT_DIR = Path(__file__).resolve().parents[2]
+CSV_DIR = ROOT_DIR / "csv"
+
+
+def resolve_data_path() -> Path:
+    configured_path = os.getenv("BUS_DATA_PATH", "").strip()
+    if configured_path:
+        return Path(configured_path).expanduser().resolve()
+
+    csv_files = sorted(CSV_DIR.glob("*.csv"))
+    if not csv_files:
+        raise FileNotFoundError(
+            f"CSV 파일을 찾지 못했습니다: {CSV_DIR}. "
+            "npm run download:data로 내려받거나 BUS_DATA_PATH를 지정하세요."
+        )
+    return csv_files[-1]
+
+
+DATA_PATH = resolve_data_path()
 ROUTE_COL_CANDIDATES = ["노선번호", "RTE_NO"]
 STATION_COL_CANDIDATES = ["정류장명", "역명", "SBWY_STNS_NM"]
 DAY_TYPE_COL_CANDIDATES = ["요일구분", "DAY_TYPE", "dayType"]

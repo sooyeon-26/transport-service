@@ -18,3 +18,5 @@ yarn-error.log*
 
 # Generated model/cache artifacts
 backend/model/bus_api_cache.json
+backend/model/*.pkl
+backend/data/
