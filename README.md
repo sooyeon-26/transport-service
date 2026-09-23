@@ -1,123 +1,110 @@
 # 타도될까
 
-서울시 버스 승하차 자료를 노선·정류장·시간대별로 조회하고, 평균 승차 인원을 기준으로 혼잡 구간을 보여주는 웹 서비스입니다.
+A Seoul bus data explorer that turns monthly public CSVs into an API and hourly boarding charts.
 
-[배포된 데모 보기](https://transport-service-omega.vercel.app/)
+[Demo](https://transport-service-omega.vercel.app/) · [Portfolio](https://sooyeon-developer-portfolio.vercel.app/)
 
-![타도될까 노선과 정류장 선택 화면](docs/preview.png)
+## Overview
 
-## 문제
+Bus arrival times do not show how boarding patterns differ throughout the day. 타도될까 uses monthly Seoul bus boarding and alighting data to compare hours for a selected route and stop. A Python script prepares the data for an Express API, and a React interface presents hourly averages and rule-based crowding labels.
 
-버스 도착 정보만으로는 어느 시간대가 덜 붐비는지 비교하기 어렵습니다. 공개된 월별 승하차 자료를 사용해 같은 노선과 정류장의 시간대별 차이를 한 화면에서 확인할 수 있도록 만들었습니다.
+The repository remains named `transport-service`; the service name is **타도될까**.
 
-## 해결 방식
+## Features
 
-Python으로 최근 월 CSV를 노선·정류장·시간대 조회 구조의 gzip JSON 캐시로 만들었습니다. Express는 캐시를 메모리 인덱스로 구성해 선택 조건에 맞는 데이터만 반환하고, React 화면은 일평균 승차 인원을 혼잡 단계와 이용 안내로 바꿉니다.
+- Select an available month, route, stop, and hour.
+- View average daily boardings for each hour of the day.
+- Show crowding labels and a simple suggestion to travel later when the selected hour is busy.
+- Convert monthly CSVs into a compressed JSON cache for API queries.
+- Index the cache by month, route, stop, day type, and hour in memory.
 
-## 주요 기능
+The live API uses historical averages, not a trained prediction model. Each hourly boarding total is divided by the number of calendar days in its month and rounded. The resulting daily average is assigned a label:
 
-- 데이터가 존재하는 월, 노선, 정류장 선택
-- 시간대별 일평균 승차 인원 그래프 조회
-- 선택한 시간의 예상 승차 인원과 혼잡 단계 표시
-- 혼잡한 시간대에 다음 시간 이용 안내
-- CSV에서 API용 JSON 캐시 생성
-- 프론트엔드 개발 서버에서 Express API로 프록시
-
-현재 서비스의 결과는 머신러닝 예측값이 아닙니다. 월별 총 승차 인원을 해당 월의 일수로 나눈 일평균 값에 구간 규칙을 적용한 추정치입니다.
-
-| 일평균 승차 인원 | 표시 |
+| Average boardings | Display label |
 | ---: | --- |
-| 0–20명 | 여유 |
-| 21–50명 | 보통 |
-| 51–80명 | 혼잡 |
-| 81명 이상 | 매우 혼잡 |
+| 0–20 | 여유 (Low) |
+| 21–50 | 보통 (Moderate) |
+| 51–80 | 혼잡 (Busy) |
+| 81+ | 매우 혼잡 (Very busy) |
 
-## 데이터 흐름
+These figures describe boardings at a stop, not real-time occupancy inside one bus. The later-travel suggestion is a rule, not a comparison proving that the next hour is less crowded.
+
+## Tech Stack
+
+| Layer | Technologies | Purpose |
+| --- | --- | --- |
+| Data preparation | Python standard library | CSV decoding, monthly averages, and gzip cache generation |
+| API | Node.js, Express | Cache lookup and crowding labels |
+| UI | React, Vite, Recharts, styled-components | Route/stop selection and hourly charts |
+| Tests | Node.js test runner | Crowding thresholds and recommendation text |
+
+## Architecture
 
 ```text
-서울시 월별 CSV
-  → build_bus_api_cache.py
-  → 최근 월 API 캐시
-  → Express API
-  → React 그래프와 시간대 안내
+Monthly Seoul CSVs → Python cache builder → gzip JSON cache
+                                                 ↓
+                                         Express memory indexes
+                                                 ↓
+                                        React charts and guidance
 ```
 
-## 기술 선택
+The default cache contains the latest available CSV month. Express loads it once into memory and uses indexed lookups for API requests; the deployed request path does not run Python or query a live public API.
 
-| 구분 | 사용 기술 | 맡은 역할 |
-| --- | --- | --- |
-| Frontend | React, Vite, Recharts, styled-components | 조회 조건과 시간대 그래프 |
-| Backend | Express | 캐시 조회와 혼잡 단계 계산 |
-| Data pipeline | Python 표준 라이브러리 | CSV 인코딩 처리와 월별 캐시 생성 |
-| Test | Node.js test runner | 혼잡 구간과 안내 문구 검증 |
+Code entry points:
 
-## 실행 방법
+- [CSV processing and cache generation](backend/model/build_bus_api_cache.py)
+- [API routes, memory indexes, and crowding rules](backend/routes/bus.js)
+- [Bus explorer screen](frontend/src/pages/BusCrowdingPage.jsx)
 
-요구 환경은 Node.js 20.19 이상 또는 22.12 이상과 Python 3.10 이상입니다.
+## Getting Started
+
+Use Node.js 22.12+ and Python 3.10+ with `python` available on your PATH.
 
 ```bash
-npm run install:all
+npm ci --prefix backend
+npm ci --prefix frontend
+```
+
+A compressed cache is checked in. To regenerate it from the latest CSV:
+
+```bash
 npm run build:cache
 ```
 
-`build:cache`는 가장 최근 월의 CSV만 읽어 `backend/model/bus_api_cache.json.gz`를 만듭니다. 배포 환경에서는 이 압축 캐시를 읽고, 로컬에 기존 JSON 캐시가 있으면 폴백으로 사용할 수 있습니다.
-
-서버 두 개를 각각 실행합니다.
+Start the API and frontend in separate terminals, both from the repository root:
 
 ```bash
-# 터미널 1
+# Terminal 1
 npm run server
 
-# 터미널 2
+# Terminal 2
 npm run dev
 ```
 
-프론트엔드는 `http://localhost:5173`, API는 `http://localhost:4000`에서 실행됩니다. Vite 개발 서버는 `/api` 요청을 백엔드로 전달합니다.
+The API defaults to `http://localhost:4000` and the UI to `http://localhost:5173`. Vite proxies `/api` requests to the backend.
 
-## 테스트와 빌드
+## Checks
 
 ```bash
 npm test
 npm run build
-npm audit --omit=dev --prefix frontend
-npm audit --omit=dev --prefix backend
 ```
 
-## 배포
+The tests cover crowding thresholds and recommendation text. They do not validate the accuracy of the underlying public data or train a model.
 
-- Production: [transport-service-omega.vercel.app](https://transport-service-omega.vercel.app/)
-- Vercel에서 React 프론트엔드와 Express API를 각각 서비스로 빌드합니다.
-- 배포에는 최근 월의 `bus_api_cache.json.gz`만 포함하고 원본 CSV와 12개월 전체 캐시는 제외합니다.
-- `/api/*` 요청은 Express 서비스가 처리합니다.
+## Deployment and Data Scope
 
-## 여러 달의 데이터를 확인하려면
+The Vercel configuration defines separate React and Express services and routes `/api/*` to the backend. The deployment includes `backend/model/bus_api_cache.json.gz` and excludes the raw CSVs. Express prefers the gzip cache and can fall back to an uncompressed JSON cache locally.
 
-기본 캐시는 실행 속도와 파일 크기를 고려해 최근 1개월만 포함합니다. 저장된 모든 CSV를 포함하려면 아래 명령을 사용합니다.
+The `csv/` directory contains monthly source files from June 2025 through May 2026. To rebuild the cache with every available month:
 
 ```bash
 npm run build:cache:all
 ```
 
-현재 12개월 데이터를 압축 전 JSON으로 모두 구성하면 약 317MB까지 커지고, 서버가 시작할 때 전체 내용을 메모리에 올립니다. 배포 환경에서는 최근 월만 사용하거나 데이터베이스로 옮기는 편이 안전합니다.
+The entire expanded cache is loaded into memory, so including more months increases startup work and memory use. Source CSVs remain in the repository for reproducibility; older generated assets also remain in Git history.
 
-## 데이터와 실험 파일
-
-- `csv/`: 2025년 6월부터 2026년 5월까지의 월별 원본 자료
-- `backend/model/preprocess.py`: 가장 최근 월 CSV를 실험용 학습 데이터로 변환
-- `backend/model/train_model.py`: Random Forest 실험 모델과 전처리 결과 생성
-
-`processed_bus_data.pkl`과 `bus_crowding_model.pkl`은 생성 파일이라 Git에 포함하지 않습니다. 실험을 다시 실행하려면 아래 명령을 사용합니다.
-
-```bash
-python -m pip install -r backend/model/requirements.txt
-npm run train
-```
-
-기본값은 `csv/`에서 파일명이 가장 최신인 월을 사용합니다. 다른 파일을 쓰려면 `BUS_DATA_PATH`에 경로를 지정합니다. 모델과 `predict.py`는 별도의 실험 코드이며 현재 Express API 요청 경로에서는 사용하지 않습니다.
-
-월별 원본 CSV는 데이터 출처를 재현하기 위해 현재 저장소에 남겨 두었습니다. Git 기록에는 과거의 중복 CSV와 생성 모델도 남아 있으므로 공개 저장소 크기를 실질적으로 줄이려면 Git LFS로 이전하거나 코드 중심의 새 저장소를 만드는 과정이 추가로 필요합니다.
-
-## 주요 API
+Selected API routes:
 
 ```text
 GET /health
@@ -127,9 +114,32 @@ GET /api/bus/hourly?route=0017&station=남이장군사당(00017)&month=202605
 GET /api/bus/predict?route=0017&station=남이장군사당(00017)&month=202605&hour=8
 ```
 
-## 현재 한계
+The `/predict` route name is retained from the existing API; its current result comes from cached averages and threshold rules.
 
-- 승차 인원은 차량 한 대의 실시간 탑승자 수가 아니라 해당 정류장의 월별 집계에서 계산한 일평균입니다.
-- 평일·주말이 원본 캐시에 분리되어 있지 않아 화면에서 선택하더라도 같은 `all` 데이터를 사용합니다.
-- 배차 간격, 차량 정원, 행사와 날씨를 반영하지 않습니다.
-- 전체 기간 캐시는 정적 JSON 구조라 기간이 늘어날수록 시작 시간과 메모리 사용량이 커집니다.
+## Separate Modeling Experiment
+
+`backend/model/preprocess.py`, `train_model.py`, and `predict.py` contain a separate Random Forest experiment. They are not called by the current Express request path and are not required to run the service.
+
+To reproduce the experiment:
+
+```bash
+python -m pip install -r backend/model/requirements.txt
+npm run train
+```
+
+The scripts default to the latest CSV filename; set `BUS_DATA_PATH` to select another file. Generated `.pkl` artifacts are not included in the current checkout.
+
+## Screenshots
+
+![타도될까 route and stop selection screen](docs/preview.png)
+
+## Limitations
+
+- Labels are based on historical average boardings, not real-time vehicle occupancy.
+- Weekday and weekend selections fall back to the same `all` data in the current cache.
+- Bus frequency, vehicle capacity, events, and weather are not included.
+- The service's data freshness depends on the checked-in CSVs and cache rebuilds.
+
+## Links
+
+[Demo](https://transport-service-omega.vercel.app/) · [Portfolio](https://sooyeon-developer-portfolio.vercel.app/)
